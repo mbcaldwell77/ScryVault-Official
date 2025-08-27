@@ -9,21 +9,23 @@
 **Date:** [To be filled] | **Status:** 🔄 In Progress
 
 ### **Pre-Session Checklist**
-- [ ] Install Node.js (v18+)
-- [ ] Install Python (v3.9+)
-- [ ] Install PostgreSQL
-- [ ] Install Git
-- [ ] Install VS Code
-- [ ] Create GitHub repository
+- [x] Install Node.js (v22.18.0) ✅
+- [x] Install Python (v3.13.7) ✅
+- [x] Install PostgreSQL (v17.6) ✅ (backup/testing)
+- [x] Install Git (v2.51) ✅
+- [x] Install Cursor (IDE) ✅
+- [x] Create GitHub repository ✅
+- [ ] Set up Supabase account
 - [ ] Set up development environment
 
 ### **Session 1 Tasks**
 - [ ] **Project Structure Setup**
   - [ ] Create project directory structure
-  - [ ] Initialize Git repository
+  - [ ] Initialize Git repository (connect to existing repo)
   - [ ] Set up frontend React app
-  - [ ] Set up backend Django app
+  - [ ] Set up Supabase project
   - [ ] Configure basic dependencies
+  - [ ] Set up Python virtual environment
 
 - [ ] **Design System Foundation**
   - [ ] Create color palette (dark mode, silver, green)
@@ -32,11 +34,11 @@
   - [ ] Design system documentation
 
 - [ ] **Database Schema Design**
-  - [ ] Design Users table
+  - [ ] Design Users table (Supabase auth)
   - [ ] Design Books table
   - [ ] Design Listings table
   - [ ] Design Photos table
-  - [ ] Create initial migrations
+  - [ ] Set up Supabase tables and RLS
 
 ### **Session 1 Deliverables**
 - [ ] Working development environment
@@ -50,30 +52,30 @@
 **Date:** [To be filled] | **Status:** ⏳ Pending
 
 ### **Session 2 Tasks**
-- [ ] **Django Backend Setup**
-  - [ ] Configure Django settings
-  - [ ] Set up PostgreSQL connection
-  - [ ] Create Django apps (users, inventory, listings, photos)
-  - [ ] Implement basic models
-  - [ ] Set up Django REST Framework
+- [ ] **Supabase Backend Setup**
+  - [ ] Configure Supabase client
+  - [ ] Set up authentication (email/password, social)
+  - [ ] Create database tables
+  - [ ] Set up Row Level Security (RLS)
+  - [ ] Configure storage buckets
 
 - [ ] **Authentication System**
   - [ ] User registration and login
-  - [ ] JWT token authentication
+  - [ ] Supabase auth integration
   - [ ] Password reset functionality
   - [ ] User profile management
 
 - [ ] **Basic API Endpoints**
-  - [ ] User CRUD operations
+  - [ ] User CRUD operations (Supabase client)
   - [ ] Book CRUD operations
   - [ ] Basic listing operations
-  - [ ] Photo upload endpoints
+  - [ ] Photo upload endpoints (Supabase storage)
 
 ### **Session 2 Deliverables**
-- [ ] Working Django backend
+- [ ] Working Supabase backend
 - [ ] Authentication system
 - [ ] Basic API endpoints
-- [ ] Database migrations
+- [ ] Database tables and RLS
 
 ---
 
@@ -281,7 +283,12 @@
 - Dynamic pricing algorithms
 
 ### **Phase 3: Mobile App**
-- React Native development
+- **Recommended: Expo with React Native**
+  - Expo Camera for barcode scanning
+  - Expo Barcode Scanner library
+  - Push notifications via Expo Notifications
+  - Easy deployment to App Store/Google Play
+  - Cross-platform compatibility
 - Camera integration for barcode scanning
 - Push notifications
 - App Store deployment
@@ -291,6 +298,38 @@
 - Auto-purchase capabilities
 - Advanced automation
 - Performance optimization
+
+## 🗄️ **Database & Infrastructure Decisions**
+
+### **Database Strategy - REVISED**
+- **Recommendation: Start with Supabase from Day 1**
+  - **Why:** Your mobile-first approach needs real-time sync
+  - **Benefits:**
+    - Real-time subscriptions (mobile ↔ web sync)
+    - Built-in authentication
+    - File storage included
+    - No migration complexity
+    - Works perfectly with Expo and Vercel
+  - **Local PostgreSQL:** Keep for backup/testing only
+
+### **Deployment Strategy**
+- **Frontend (Web):** Vercel (React app)
+- **Mobile:** Expo (React Native)
+- **Backend:** Supabase (PostgreSQL + API)
+- **File Storage:** Supabase Storage
+- **Real-time:** Supabase real-time subscriptions
+
+### **Mobile Development Stack**
+- **Framework:** Expo (React Native)
+- **Barcode Scanning:** Expo Camera + expo-barcode-scanner
+- **Database:** Supabase client SDK
+- **Benefits:**
+  - Faster development
+  - Built-in camera access
+  - Real-time data sync
+  - Easy testing on physical devices
+  - Over-the-air updates
+  - No need for Xcode/Android Studio initially
 
 ---
 

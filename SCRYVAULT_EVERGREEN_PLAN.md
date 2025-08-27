@@ -27,8 +27,9 @@ ScryVault is an all-in-one application that transforms the tedious process of se
 
 ### **Platform Strategy**
 - **Phase 1:** Responsive web app (mobile-first)
-- **Phase 2:** React Native mobile app for camera features
+- **Phase 2:** Expo React Native mobile app for camera features
 - **Cross-platform:** Works on iPhone, Android, desktop
+- **Barcode Scanning:** Native camera integration via Expo
 
 ### **Tech Stack**
 **Frontend:**
@@ -38,14 +39,20 @@ ScryVault is an all-in-one application that transforms the tedious process of se
 - Responsive design with mobile-first approach
 
 **Backend:**
-- Python/Django
-- PostgreSQL database
-- REST API architecture
+- Supabase (PostgreSQL + API)
+- Built-in authentication
+- Real-time subscriptions
+- File storage included
 
 **External APIs:**
 - eBay API (listings, sales, messaging)
 - Google Books API (ISBN metadata)
-- Cloud storage (AWS S3 or Google Cloud)
+- Supabase Storage (file uploads)
+
+**Mobile:**
+- Expo React Native
+- Expo Camera for barcode scanning
+- Expo Notifications for push alerts
 
 ## 📱 **The "Scan-to-Live" Pipeline**
 
@@ -177,16 +184,17 @@ ScryVault is an all-in-one application that transforms the tedious process of se
 ## 🛠️ **Development Environment**
 
 ### **Required Software**
-- Node.js (v18+)
-- Python (v3.9+)
-- PostgreSQL
-- Git
-- VS Code (recommended)
+- Node.js (v22.18.0) ✅
+- Python (v3.13.7) ✅
+- PostgreSQL (v17.6) ✅ (backup/testing)
+- Git (v2.51) ✅
+- Cursor IDE ✅
 
 ### **API Keys Required**
 - eBay Developer Account
 - Google Cloud Console (Books API)
-- Cloud Storage (AWS S3 or Google Cloud)
+- Supabase Account (primary database)
+- Expo Account (for mobile development)
 
 ### **Development Workflow**
 - Git-based version control
