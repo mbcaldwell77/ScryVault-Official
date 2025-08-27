@@ -1,5 +1,6 @@
 import { BookOpen, Camera, TrendingUp, Package, Settings, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function Dashboard() {
   return (
@@ -9,7 +10,7 @@ export default function Dashboard() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-gray-700/50">
-            <div className="flex items-center space-x-3">
+            <Link href="/" className="flex items-center space-x-3">
               <div className="relative">
                 <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-lg flex items-center justify-center">
                   <BookOpen className="w-6 h-6 text-white" />
@@ -22,28 +23,28 @@ export default function Dashboard() {
                 </h1>
                 <p className="text-xs text-gray-400">Dashboard</p>
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* Navigation */}
           <nav className="flex-1 p-6">
             <div className="space-y-2">
-              <a href="#" className="flex items-center space-x-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <Link href="/dashboard" className="flex items-center space-x-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                 <BookOpen className="w-5 h-5" />
                 <span>Overview</span>
-              </a>
-              <a href="#" className="flex items-center space-x-3 p-3 rounded-lg text-gray-300 hover:bg-gray-800/50 hover:text-emerald-400 transition-colors">
+              </Link>
+              <Link href="/scan" className="flex items-center space-x-3 p-3 rounded-lg text-gray-300 hover:bg-gray-800/50 hover:text-emerald-400 transition-colors">
                 <Camera className="w-5 h-5" />
                 <span>Scan Books</span>
-              </a>
-              <a href="#" className="flex items-center space-x-3 p-3 rounded-lg text-gray-300 hover:bg-gray-800/50 hover:text-emerald-400 transition-colors">
+              </Link>
+              <Link href="/inventory" className="flex items-center space-x-3 p-3 rounded-lg text-gray-300 hover:bg-gray-800/50 hover:text-emerald-400 transition-colors">
                 <Package className="w-5 h-5" />
                 <span>Inventory</span>
-              </a>
-              <a href="#" className="flex items-center space-x-3 p-3 rounded-lg text-gray-300 hover:bg-gray-800/50 hover:text-emerald-400 transition-colors">
+              </Link>
+              <Link href="/analytics" className="flex items-center space-x-3 p-3 rounded-lg text-gray-300 hover:bg-gray-800/50 hover:text-emerald-400 transition-colors">
                 <TrendingUp className="w-5 h-5" />
                 <span>Analytics</span>
-              </a>
+              </Link>
             </div>
           </nav>
 
@@ -71,10 +72,10 @@ export default function Dashboard() {
               <h2 className="text-2xl font-bold text-white">Dashboard</h2>
               <p className="text-gray-400">Welcome back! Here's what's happening with your book business.</p>
             </div>
-            <button className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
+            <Link href="/scan" className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
               <Camera className="w-4 h-4 inline mr-2" />
               Scan New Book
-            </button>
+            </Link>
           </div>
         </header>
 
@@ -173,22 +174,22 @@ export default function Dashboard() {
             <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
               <h3 className="text-xl font-semibold text-white mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full flex items-center space-x-3 p-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 hover:from-emerald-500/20 hover:to-cyan-500/20 transition-all duration-200">
+                <Link href="/scan" className="w-full flex items-center space-x-3 p-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 hover:from-emerald-500/20 hover:to-cyan-500/20 transition-all duration-200">
                   <Camera className="w-5 h-5" />
                   <span>Scan New Book</span>
-                </button>
-                <button className="w-full flex items-center space-x-3 p-4 bg-gray-700/30 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-200">
+                </Link>
+                <Link href="/inventory" className="w-full flex items-center space-x-3 p-4 bg-gray-700/30 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-200">
                   <Package className="w-5 h-5" />
                   <span>View Inventory</span>
-                </button>
-                <button className="w-full flex items-center space-x-3 p-4 bg-gray-700/30 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-200">
+                </Link>
+                <Link href="/analytics" className="w-full flex items-center space-x-3 p-4 bg-gray-700/30 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-200">
                   <TrendingUp className="w-5 h-5" />
                   <span>Analytics Report</span>
-                </button>
-                <button className="w-full flex items-center space-x-3 p-4 bg-gray-700/30 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-200">
+                </Link>
+                <Link href="/settings" className="w-full flex items-center space-x-3 p-4 bg-gray-700/30 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-200">
                   <Settings className="w-5 h-5" />
                   <span>Settings</span>
-                </button>
+                </Link>
               </div>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { BookOpen, Camera, Zap, TrendingUp, Shield, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -27,9 +28,9 @@ export default function Home() {
               <a href="#pricing" className="text-gray-300 hover:text-emerald-400 transition-colors">Pricing</a>
               <a href="#about" className="text-gray-300 hover:text-emerald-400 transition-colors">About</a>
             </nav>
-            <button className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
+            <Link href="/dashboard" className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
               Get Started
-            </button>
+            </Link>
           </div>
         </div>
       </header>
@@ -58,16 +59,16 @@ export default function Home() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <button className="group relative bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-xl shadow-emerald-500/25 hover:shadow-2xl hover:shadow-emerald-500/40">
+            <Link href="/scan" className="group relative bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-xl shadow-emerald-500/25 hover:shadow-2xl hover:shadow-emerald-500/40">
               <span className="relative z-10 flex items-center justify-center space-x-2">
                 <Camera className="w-5 h-5" />
                 <span>Start Scanning</span>
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
-            </button>
-            <button className="border border-gray-600 text-gray-300 px-8 py-4 rounded-xl font-semibold text-lg hover:border-emerald-500 hover:text-emerald-400 transition-all duration-200">
+            </Link>
+            <Link href="/dashboard" className="border border-gray-600 text-gray-300 px-8 py-4 rounded-xl font-semibold text-lg hover:border-emerald-500 hover:text-emerald-400 transition-all duration-200">
               Watch Demo
-            </button>
+            </Link>
           </div>
 
           {/* Feature Grid */}

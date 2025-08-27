@@ -1,5 +1,6 @@
 import { Camera, Upload, Search, BookOpen, ArrowRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function ScanPage() {
   return (
@@ -22,9 +23,9 @@ export default function ScanPage() {
                 <p className="text-xs text-gray-400">Scan-to-Live Platform</p>
               </div>
             </div>
-            <a href="/dashboard" className="text-gray-300 hover:text-emerald-400 transition-colors">
+            <Link href="/dashboard" className="text-gray-300 hover:text-emerald-400 transition-colors">
               ← Back to Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -117,7 +118,7 @@ export default function ScanPage() {
                 { title: "To Kill a Mockingbird", isbn: "978-0446310789", price: "$38.00", time: "4 hours ago" },
                 { title: "1984", isbn: "978-0451524935", price: "$32.00", time: "6 hours ago" },
               ].map((book, index) => (
-                <div key={index} className="flex items-center space-x-4 p-4 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors duration-200">
+                <Link key={index} href="/inventory" className="flex items-center space-x-4 p-4 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors duration-200">
                   <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
                     <BookOpen className="w-6 h-6 text-emerald-400" />
                   </div>
@@ -130,7 +131,7 @@ export default function ScanPage() {
                     <p className="text-gray-400 text-xs">{book.time}</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-gray-400" />
-                </div>
+                </Link>
               ))}
             </div>
           </div>
