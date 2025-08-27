@@ -15,7 +15,8 @@
 - [x] Install Git (v2.51) ✅
 - [x] Install Cursor (IDE) ✅
 - [x] Create GitHub repository ✅
-- [ ] Set up Supabase account
+- [x] Set up Supabase account ✅
+- [x] Get Supabase credentials ✅
 - [ ] Set up development environment
 
 ### **Session 1 Tasks**
@@ -23,9 +24,9 @@
   - [ ] Create project directory structure
   - [ ] Initialize Git repository (connect to existing repo)
   - [ ] Set up frontend React app
-  - [ ] Set up Supabase project
+  - [ ] Configure Supabase client with credentials
   - [ ] Configure basic dependencies
-  - [ ] Set up Python virtual environment
+  - [ ] Set up environment variables
 
 - [ ] **Design System Foundation**
   - [ ] Create color palette (dark mode, silver, green)
@@ -45,6 +46,7 @@
 - [ ] Basic project structure
 - [ ] Design system foundation
 - [ ] Database schema
+- [ ] Environment variables configured
 
 ---
 
@@ -83,9 +85,9 @@
 **Date:** [To be filled] | **Status:** ⏳ Pending
 
 ### **Session 3 Tasks**
-- [ ] **React App Setup**
-  - [ ] Configure React with TypeScript
-  - [ ] Set up routing (React Router)
+- [ ] **Next.js App Setup**
+  - [ ] Configure Next.js with TypeScript
+  - [ ] Set up routing (Next.js file-based routing)
   - [ ] Configure state management
   - [ ] Set up API service layer
 
@@ -103,7 +105,7 @@
   - [ ] Modal components
 
 ### **Session 3 Deliverables**
-- [ ] Working React frontend
+- [ ] Working Next.js frontend
 - [ ] Design system components
 - [ ] Basic UI framework
 - [ ] Responsive layout
@@ -313,7 +315,7 @@
   - **Local PostgreSQL:** Keep for backup/testing only
 
 ### **Deployment Strategy**
-- **Frontend (Web):** Vercel (React app)
+- **Frontend (Web):** Vercel (Next.js app)
 - **Mobile:** Expo (React Native)
 - **Backend:** Supabase (PostgreSQL + API)
 - **File Storage:** Supabase Storage
@@ -344,8 +346,43 @@
 ### **Current Blockers**
 - None identified
 
+### **Pre-Development Checklist**
+- [ ] eBay Developer Account (for later phases)
+- [ ] Google Cloud Console API key (for Google Books API)
+- [ ] Expo account (for mobile development)
+- [x] Vercel account (for web deployment) ✅
+
 ### **Next Session Priority**
 - Environment setup and project foundation
+
+## 🎯 **Final Tech Stack Summary**
+
+### **Web Application**
+- **Framework:** Next.js (React framework)
+- **Language:** TypeScript
+- **Styling:** CSS-in-JS or styled-components
+- **Deployment:** Vercel
+
+### **Mobile Application**
+- **Framework:** Expo React Native
+- **Barcode Scanning:** Expo Camera + expo-barcode-scanner
+- **Deployment:** Expo EAS Build
+
+### **Backend & Database**
+- **Database:** Supabase (PostgreSQL)
+- **Authentication:** Supabase Auth
+- **File Storage:** Supabase Storage
+- **Real-time:** Supabase subscriptions
+
+### **External APIs**
+- **eBay API:** Listing management
+- **Google Books API:** ISBN metadata lookup
+
+### **Development Environment**
+- **IDE:** Cursor
+- **Version Control:** Git
+- **Package Manager:** npm
+- **Environment:** Windows 11
 
 ---
 

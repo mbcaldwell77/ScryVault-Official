@@ -33,8 +33,8 @@ ScryVault is an all-in-one application that transforms the tedious process of se
 
 ### **Tech Stack**
 **Frontend:**
-- React (web app)
-- React Native (future mobile app)
+- Next.js (React framework for web app)
+- React Native (future mobile app via Expo)
 - TypeScript
 - Responsive design with mobile-first approach
 
@@ -53,6 +53,11 @@ ScryVault is an all-in-one application that transforms the tedious process of se
 - Expo React Native
 - Expo Camera for barcode scanning
 - Expo Notifications for push alerts
+
+**Deployment:**
+- Vercel (Next.js web app)
+- Expo (mobile app)
+- Supabase (database & backend)
 
 ## 📱 **The "Scan-to-Live" Pipeline**
 
@@ -191,10 +196,11 @@ ScryVault is an all-in-one application that transforms the tedious process of se
 - Cursor IDE ✅
 
 ### **API Keys Required**
-- eBay Developer Account
+- eBay Developer Account (for later phases)
 - Google Cloud Console (Books API)
-- Supabase Account (primary database)
+- Supabase Account (primary database) ✅
 - Expo Account (for mobile development)
+- Vercel Account (for web deployment) ✅
 
 ### **Development Workflow**
 - Git-based version control
