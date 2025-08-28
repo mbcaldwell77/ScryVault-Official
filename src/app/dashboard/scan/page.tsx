@@ -1,24 +1,21 @@
-import { Sparkles, Camera, Search, Upload, BookOpen, ArrowRight } from "lucide-react";
+import { Camera, Upload, Search, ArrowRight, Sparkles, BookOpen } from "lucide-react";
 import Link from "next/link";
-import Sidebar from "../components/Sidebar";
 
 export default function ScanPage() {
   return (
     <>
-      <Sidebar />
-      <div className="pl-64">
-        {/* Page Header */}
-        <div className="p-6 border-b border-gray-700/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Scan Books</h2>
-              <p className="text-gray-400">Add new books to your inventory</p>
-            </div>
+      {/* Page Header */}
+      <div className="p-6 border-b border-gray-700/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Scan Books</h2>
+            <p className="text-gray-400">Add new books to your inventory</p>
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="p-6">
+      {/* Main Content */}
+      <div className="p-6">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
@@ -122,7 +119,6 @@ export default function ScanPage() {
               ))}
             </div>
           </div>
-        </div>
         </div>
       </div>
     </>

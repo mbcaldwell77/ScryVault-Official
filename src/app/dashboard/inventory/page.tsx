@@ -1,27 +1,28 @@
-import Sidebar from "../components/Sidebar";
+import { BookOpen, Search, Filter, Plus, Eye, Edit, Trash2, Package, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function InventoryPage() {
   return (
     <>
-      <Sidebar />
-      <div className="pl-64">
-        {/* Page Header */}
-        <div className="p-6 border-b border-gray-700/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Inventory</h2>
-              <p className="text-gray-400">Manage your book collection</p>
-            </div>
-            <div className="flex space-x-4">
-              <a href="/scan" className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
-                Add Book
-              </a>
-            </div>
+      {/* Page Header */}
+      <div className="p-6 border-b border-gray-700/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Inventory</h2>
+            <p className="text-gray-400">Manage your book collection</p>
+          </div>
+          <div className="flex space-x-4">
+            <Link href="/scan" className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
+              <Plus className="w-4 h-4 inline mr-2" />
+              Add Book
+            </Link>
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="p-6">
+      {/* Main Content */}
+      <div className="p-6">
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -232,7 +233,6 @@ export default function InventoryPage() {
               Next
             </button>
           </div>
-        </div>
         </div>
       </div>
     </>

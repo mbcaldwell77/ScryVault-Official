@@ -1,86 +1,22 @@
-import { BookOpen, Camera, TrendingUp, Package, Settings, User } from "lucide-react";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
+import Sidebar from "../components/Sidebar";
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-      {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-gray-900/95 backdrop-blur-sm border-r border-gray-700/50">
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-gray-700/50">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
-                  ScryVault
-                </h1>
-                <p className="text-xs text-gray-400">Dashboard</p>
-              </div>
-            </Link>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-6">
-            <div className="space-y-2">
-              <Link href="/dashboard" className="flex items-center space-x-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                <BookOpen className="w-5 h-5" />
-                <span>Overview</span>
-              </Link>
-              <Link href="/scan" className="flex items-center space-x-3 p-3 rounded-lg text-gray-300 hover:bg-gray-800/50 hover:text-emerald-400 transition-colors">
-                <Camera className="w-5 h-5" />
-                <span>Scan Books</span>
-              </Link>
-              <Link href="/inventory" className="flex items-center space-x-3 p-3 rounded-lg text-gray-300 hover:bg-gray-800/50 hover:text-emerald-400 transition-colors">
-                <Package className="w-5 h-5" />
-                <span>Inventory</span>
-              </Link>
-              <Link href="/analytics" className="flex items-center space-x-3 p-3 rounded-lg text-gray-300 hover:bg-gray-800/50 hover:text-emerald-400 transition-colors">
-                <TrendingUp className="w-5 h-5" />
-                <span>Analytics</span>
-              </Link>
-            </div>
-          </nav>
-
-          {/* User */}
-          <div className="p-6 border-t border-gray-700/50">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-gray-300" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-white">John Doe</p>
-                <p className="text-xs text-gray-400">Premium Plan</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="ml-64">
-        {/* Header */}
-        <header className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-700/50 p-6">
+    <>
+      <Sidebar />
+      <div className="pl-64">
+        {/* Page Header */}
+        <div className="p-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Dashboard</h2>
               <p className="text-gray-400">Welcome back! Here's what's happening with your book business.</p>
             </div>
-            <Link href="/scan" className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
-              <Camera className="w-4 h-4 inline mr-2" />
-              Scan New Book
-            </Link>
           </div>
-        </header>
+        </div>
 
         {/* Dashboard Content */}
-        <main className="p-6">
+        <div className="p-6">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
@@ -193,8 +129,8 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

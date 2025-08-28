@@ -17,7 +17,10 @@ export const metadata: Metadata = {
   description: "Transform book selling with AI-powered automation. From ISBN scan to live eBay listing in minutes.",
   keywords: ["book selling", "eBay automation", "ISBN scanner", "inventory management", "AI photography"],
   authors: [{ name: "ScryVault Team" }],
-  viewport: "width=device-width, initial-scale=1",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+  },
 };
 
 export default function RootLayout({

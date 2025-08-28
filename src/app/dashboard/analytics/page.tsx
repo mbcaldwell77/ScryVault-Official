@@ -1,22 +1,20 @@
-import Sidebar from "../components/Sidebar";
+import { BookOpen, TrendingUp, BarChart3, DollarSign, Users, Calendar } from "lucide-react";
 
 export default function AnalyticsPage() {
   return (
     <>
-      <Sidebar />
-      <div className="pl-64">
-        {/* Page Header */}
-        <div className="p-6 border-b border-gray-700/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Analytics</h2>
-              <p className="text-gray-400">Track your business performance</p>
-            </div>
+      {/* Page Header */}
+      <div className="p-6 border-b border-gray-700/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Analytics</h2>
+            <p className="text-gray-400">Track your business performance</p>
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="p-6">
+      {/* Main Content */}
+      <div className="p-6">
 
         {/* Analytics Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -145,7 +143,6 @@ export default function AnalyticsPage() {
               </div>
             ))}
           </div>
-        </div>
         </div>
       </div>
     </>
