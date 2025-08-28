@@ -242,8 +242,26 @@ export default function ScanPage() {
                 </span>
               </h1>
               <p className="text-xl text-gray-300 mb-8">
-                Enter an ISBN to automatically populate book details
+                Choose your preferred method to add a new book to your inventory
               </p>
+            </div>
+
+            {/* Quick Action Buttons */}
+            <div className="flex flex-wrap justify-center gap-4 mb-12">
+              <button
+                onClick={() => setShowManualForm(true)}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-blue-500/25 flex items-center gap-2"
+              >
+                <Search className="w-5 h-5" />
+                Manual Entry
+              </button>
+              <button
+                className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg font-medium hover:from-orange-600 hover:to-red-700 transition-all duration-200 shadow-lg shadow-orange-500/25 flex items-center gap-2"
+                disabled
+              >
+                <Upload className="w-5 h-5" />
+                Upload Photo (Coming Soon)
+              </button>
             </div>
 
             {/* ISBN Input Section */}
