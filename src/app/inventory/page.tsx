@@ -1,4 +1,4 @@
-import { BookOpen, Search, Filter, Plus, MoreVertical, Eye, Edit, Trash2, Package, TrendingUp } from "lucide-react";
+import { BookOpen, Search, Filter, Plus, Eye, Edit, Trash2, Package, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 

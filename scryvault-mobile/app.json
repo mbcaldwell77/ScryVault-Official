@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#111827"
     },
@@ -18,8 +18,10 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to scan ISBN barcodes from books.",
-        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to upload book images."
-      }
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to upload book images.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "io.elderntomes.scryvault"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,9 +29,10 @@
         "backgroundColor": "#111827"
       },
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -54,6 +57,11 @@
           "photosPermission": "Allow ScryVault to access your photo library to upload book images."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4ede78c2-da11-4702-a187-181b001859b2"
+      }
+    }
   }
 }
