@@ -27,7 +27,7 @@ ScryVault is an all-in-one application that transforms the tedious process of se
 
 ### **Platform Strategy**
 - **Phase 1:** Responsive web app (mobile-first)
-- **Phase 2:** Expo React Native mobile app for camera features
+- **Phase 2:** Expo React Native iOS mobile app for camera features
 - **Cross-platform:** Works on iPhone, Android, desktop
 - **Barcode Scanning:** Native camera integration via Expo
 

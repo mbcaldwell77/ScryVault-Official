@@ -11,6 +11,211 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
+// Google Books API Configuration
+const GOOGLE_BOOKS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY || ''
+const GOOGLE_BOOKS_BASE_URL = 'https://www.googleapis.com/books/v1/volumes'
+
+export const supabaseService = supabase
+
+// Book data interfaces
+export interface BookData {
+  title: string
+  authors: string[]
+  isbn: string
+  isbn13?: string
+  publisher?: string
+  publishedDate?: string
+  pageCount?: number
+  description?: string
+  categories?: string[]
+  imageUrl?: string
+  language?: string
+}
+
+// Google Books API response types
+interface GoogleBooksVolume {
+  volumeInfo: {
+    title: string
+    authors?: string[]
+    publisher?: string
+    publishedDate?: string
+    description?: string
+    pageCount?: number
+    categories?: string[]
+    imageLinks?: {
+      thumbnail?: string
+      smallThumbnail?: string
+    }
+    language?: string
+    industryIdentifiers?: Array<{
+      type: string
+      identifier: string
+    }>
+  }
+}
+
+interface GoogleBooksResponse {
+  totalItems: number
+  items?: GoogleBooksVolume[]
+}
+
+// Extract ISBN from industry identifiers
+const extractISBN = (identifiers?: Array<{ type: string; identifier: string }>) => {
+  if (!identifiers) return { isbn: '', isbn13: '' }
+
+  let isbn = ''
+  let isbn13 = ''
+
+  identifiers.forEach((id) => {
+    if (id.type === 'ISBN_10') {
+      isbn = id.identifier
+    } else if (id.type === 'ISBN_13') {
+      isbn13 = id.identifier
+    }
+  })
+
+  return { isbn, isbn13 }
+}
+
+// Normalize Google Books data to our format
+const normalizeGoogleBooksData = (volume: GoogleBooksVolume): BookData => {
+  const { isbn, isbn13 } = extractISBN(volume.volumeInfo.industryIdentifiers)
+
+  return {
+    title: volume.volumeInfo.title,
+    authors: volume.volumeInfo.authors || [],
+    isbn,
+    isbn13,
+    publisher: volume.volumeInfo.publisher,
+    publishedDate: volume.volumeInfo.publishedDate,
+    pageCount: volume.volumeInfo.pageCount,
+    description: volume.volumeInfo.description,
+    categories: volume.volumeInfo.categories,
+    imageUrl: volume.volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:'),
+    language: volume.volumeInfo.language
+  }
+}
+
+// Main book lookup function with graceful failure
+export const lookupBookByISBN = async (isbn: string): Promise<BookData | null> => {
+  try {
+    // Clean the ISBN (remove hyphens, spaces)
+    const cleanISBN = isbn.replace(/[-\s]/g, '')
+
+    // Try with ISBN-13 first if available, then ISBN-10
+    let searchISBN = cleanISBN
+    if (cleanISBN.length === 13) {
+      searchISBN = cleanISBN
+    } else if (cleanISBN.length === 10) {
+      // Convert ISBN-10 to ISBN-13 for better search results
+      const isbn13 = convertISBN10to13(cleanISBN)
+      if (isbn13) searchISBN = isbn13
+    }
+
+    const url = `${GOOGLE_BOOKS_BASE_URL}?q=isbn:${searchISBN}&key=${GOOGLE_BOOKS_API_KEY}&maxResults=1`
+
+    console.log(`Looking up ISBN: ${isbn} (cleaned: ${cleanISBN}, searching: ${searchISBN})`)
+
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        console.warn('Google Books API key may be missing or invalid')
+      } else {
+        console.warn(`Google Books API error: ${response.status}`)
+      }
+      return null
+    }
+
+    const data: GoogleBooksResponse = await response.json()
+
+    if (data.totalItems === 0) {
+      console.log(`No results found for ISBN: ${isbn}`)
+      return null
+    }
+
+    const bookData = normalizeGoogleBooksData(data.items![0])
+    console.log(`Successfully found book: ${bookData.title}`)
+    return bookData
+
+  } catch (error) {
+    console.error('Error looking up book by ISBN:', error)
+    return null
+  }
+}
+
+// Convert ISBN-10 to ISBN-13
+const convertISBN10to13 = (isbn10: string): string | null => {
+  try {
+    if (isbn10.length !== 10) return null
+
+    const base = isbn10.substring(0, 9)
+    const checkDigit = isbn10.charAt(9)
+
+    // Add 978 prefix
+    const isbn13Base = '978' + base
+
+    // Calculate ISBN-13 check digit
+    let sum = 0
+    for (let i = 0; i < 12; i++) {
+      sum += parseInt(isbn13Base.charAt(i)) * (i % 2 === 0 ? 1 : 3)
+    }
+
+    const checkDigit13 = (10 - (sum % 10)) % 10
+
+    return isbn13Base + checkDigit13.toString()
+  } catch (error) {
+    console.warn('Error converting ISBN-10 to ISBN-13:', error)
+    return null
+  }
+}
+
+// Validate ISBN format
+export const validateISBN = (isbn: string): boolean => {
+  const cleanISBN = isbn.replace(/[-\s]/g, '')
+
+  // Check if it's a valid length
+  if (cleanISBN.length !== 10 && cleanISBN.length !== 13) {
+    return false
+  }
+
+  // Check if all characters are digits (except last character for ISBN-10 can be X)
+  if (cleanISBN.length === 10) {
+    return /^\d{9}[\dX]$/i.test(cleanISBN)
+  } else if (cleanISBN.length === 13) {
+    return /^\d{13}$/.test(cleanISBN)
+  }
+
+  return false
+}
+
+// Search books by title/author (for manual entry assistance)
+export const searchBooks = async (query: string, maxResults: number = 5): Promise<BookData[]> => {
+  try {
+    if (!query.trim()) return []
+
+    const url = `${GOOGLE_BOOKS_BASE_URL}?q=${encodeURIComponent(query)}&key=${GOOGLE_BOOKS_API_KEY}&maxResults=${maxResults}&orderBy=relevance`
+
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      console.warn(`Google Books API error: ${response.status}`)
+      return []
+    }
+
+    const data: GoogleBooksResponse = await response.json()
+
+    if (data.totalItems === 0) {
+      return []
+    }
+
+    return (data.items || []).map(normalizeGoogleBooksData)
+  } catch (error) {
+    console.error('Error searching books:', error)
+    return []
+  }
+}
+
 // Types for our database schema
 export type Database = {
   public: {
