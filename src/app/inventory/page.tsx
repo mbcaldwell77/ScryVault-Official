@@ -1,3 +1,6 @@
+import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 import Sidebar from "../components/Sidebar";
 
 export default function InventoryPage() {

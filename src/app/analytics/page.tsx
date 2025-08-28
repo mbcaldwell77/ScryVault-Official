@@ -1,3 +1,5 @@
+import { BookOpen, TrendingUp, BarChart3, DollarSign, Users, Calendar } from "lucide-react";
+import Link from "next/link";
 import Sidebar from "../components/Sidebar";
 
 export default function AnalyticsPage() {
