@@ -61,9 +61,7 @@ CREATE TABLE books (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 
     -- Full text search
-    search_vector TSVECTOR GENERATED ALWAYS AS (
-        to_tsvector('english', title || ' ' || array_to_string(authors, ' ') || ' ' || COALESCE(description, ''))
-    ) STORED
+    search_vector TSVECTOR
 );
 
 -- =============================================
@@ -267,12 +265,30 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- Function to update search vector
+CREATE OR REPLACE FUNCTION update_book_search_vector()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector := to_tsvector('english',
+        COALESCE(NEW.title, '') || ' ' ||
+        array_to_string(COALESCE(NEW.authors, '{}'), ' ') || ' ' ||
+        COALESCE(NEW.description, '')
+    );
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 -- Triggers for updated_at
 CREATE TRIGGER update_books_updated_at BEFORE UPDATE ON books FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_photos_updated_at BEFORE UPDATE ON photos FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_listings_updated_at BEFORE UPDATE ON listings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for search vector
+CREATE TRIGGER update_books_search_vector
+    BEFORE INSERT OR UPDATE ON books
+    FOR EACH ROW EXECUTE FUNCTION update_book_search_vector();
 
 -- =============================================
 -- DEFAULT DATA
@@ -290,6 +306,20 @@ INSERT INTO categories (name, description, color) VALUES
 ('Self-Help', 'Personal development and motivation', '#f97316'),
 ('Textbook', 'Educational and academic materials', '#6366f1'),
 ('Children', 'Books for young readers', '#14b8a6');
+
+-- =============================================
+-- DEVELOPMENT HELPERS (Remove in production)
+-- =============================================
+
+-- Temporarily disable RLS for development
+-- ALTER TABLE books DISABLE ROW LEVEL SECURITY;
+-- ALTER TABLE scans DISABLE ROW LEVEL SECURITY;
+-- ALTER TABLE photos DISABLE ROW LEVEL SECURITY;
+-- ALTER TABLE listings DISABLE ROW LEVEL SECURITY;
+-- ALTER TABLE user_settings DISABLE ROW LEVEL SECURITY;
+
+-- Temporarily make user_id nullable for development
+-- ALTER TABLE books ALTER COLUMN user_id DROP NOT NULL;
 
 -- =============================================
 -- COMMENTS FOR DOCUMENTATION
