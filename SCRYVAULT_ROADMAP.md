@@ -1,7 +1,7 @@
 # ScryVault Development Roadmap
 
-## 🎯 **Current Phase: Phase 1 MVP** 
-**Timeline:** 8 weeks | **Status:** Foundation Complete ✅ | **Next Session:** Mobile Scanning Integration
+## 🎯 **Current Phase: Phase 1 MVP**
+**Timeline:** 8 weeks | **Status:** Core Book Management Complete ✅ | **Next Phase:** Enhanced Features
 
 ---
 
@@ -55,34 +55,78 @@
 
 ---
 
-## 📋 **Session 2: Mobile Scanning Integration**
+## 📋 **Session 1.5: Core Book Management Implementation**
+**Date:** Current Session | **Status:** ✅ Complete
+
+### **Session 1.5 Tasks**
+- [x] **Google Books API Integration**
+  - [x] Implement ISBN lookup with Google Books API ✅
+  - [x] Handle API responses and data normalization ✅
+  - [x] Add ISBN-10 to ISBN-13 conversion ✅
+  - [x] Implement graceful error handling ✅
+
+- [x] **Database Integration Fixes**
+  - [x] Resolve Row Level Security (RLS) issues ✅
+  - [x] Implement proper user ID handling ✅
+  - [x] Fix foreign key constraint violations ✅
+  - [x] Enable successful book saving to database ✅
+
+- [x] **Enhanced Scan Page**
+  - [x] Create professional ISBN input interface ✅
+  - [x] Implement real-time book lookup ✅
+  - [x] Add manual entry fallback system ✅
+  - [x] Create book preview with API data ✅
+  - [x] Add comprehensive error handling ✅
+
+- [x] **User Experience Improvements**
+  - [x] Add loading states and feedback ✅
+  - [x] Implement professional error messages ✅
+  - [x] Create manual entry form with validation ✅
+  - [x] Add recent books display from database ✅
+
+### **Session 1.5 Deliverables**
+- [x] **Working Book Scanning:** ISBN → Google Books API → Database ✅
+- [x] **Manual Entry Fallback:** When API fails, manual form appears ✅
+- [x] **Database Persistence:** Books save and display correctly ✅
+- [x] **Professional UX:** Loading states, errors, success feedback ✅
+- [x] **Recent Books Display:** Live data from database ✅
+
+---
+
+## 📋 **Session 2: Enhanced Web Features** (Next Priority)
 **Date:** [To be filled] | **Status:** 🎯 Next Priority
 
 ### **Session 2 Tasks**
-- [ ] **Mobile Scanning Setup**
-  - [ ] Fix Expo Camera for barcode scanning (requires dev build)
-  - [ ] Connect manual ISBN entry to database 
-  - [ ] Connect mobile scanning to database
-  - [ ] Implement Google Books API integration
-  - [ ] Add photo capture functionality
+- [ ] **Inventory Management Enhancement**
+  - [ ] Implement professional inventory table with search/filter
+  - [ ] Add sorting and bulk operations
+  - [ ] Create book status management (Draft/Listed/Sold)
+  - [ ] Add profit margin calculations
 
-- [ ] **Book Data Integration**
-  - [ ] Create scan-to-database workflow
-  - [ ] Implement ISBN lookup with Google Books API
-  - [ ] Auto-populate book metadata
-  - [ ] Handle duplicate book detection
+- [ ] **eBay Listing Creation**
+  - [ ] Design eBay listing form with book data pre-population
+  - [ ] Implement template system for descriptions
+  - [ ] Add pricing suggestions and profit calculations
+  - [ ] Create draft listing system
 
-- [ ] **Mobile-Web Sync**
-  - [ ] Real-time sync between mobile and web
-  - [ ] Test scanning workflow end-to-end
-  - [ ] Implement error handling
-  - [ ] Add scan history tracking
+- [ ] **Analytics Dashboard**
+  - [ ] Build profit tracking dashboard
+  - [ ] Add sales analytics and metrics
+  - [ ] Implement performance charts
+  - [ ] Create business intelligence reports
+
+- [ ] **PWA Setup**
+  - [ ] Add web app manifest for installation
+  - [ ] Implement service worker for offline functionality
+  - [ ] Add PWA meta tags and icons
+  - [ ] Test installable web app
 
 ### **Session 2 Deliverables**
-- [ ] Working mobile scanning to database
-- [ ] Google Books API integration
-- [ ] Real-time mobile-web sync
-- [ ] Complete scan-to-inventory workflow
+- [ ] Professional inventory management system
+- [ ] eBay listing creation workflow
+- [ ] Profit tracking and analytics dashboard
+- [ ] Installable PWA with offline capabilities
+- [ ] Complete book-to-listing pipeline
 
 ---
 
