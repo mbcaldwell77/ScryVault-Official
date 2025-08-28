@@ -43,7 +43,7 @@ export default function ScanPage() {
                 </div>
                 <h3 className="text-2xl font-semibold text-white mb-4">Camera Scan</h3>
                 <p className="text-gray-400 mb-6">
-                  Use your device's camera to scan the ISBN barcode directly from the book
+                  Use your device&apos;s camera to scan the ISBN barcode directly from the book
                 </p>
                 <button className="w-full bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
                   <Camera className="w-5 h-5 inline mr-2" />

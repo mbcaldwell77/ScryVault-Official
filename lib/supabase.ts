@@ -134,7 +134,7 @@ export type Database = {
           book_id: string | null
           scan_method: string
           scanned_at: string
-          raw_data: any | null
+          raw_data: Record<string, unknown> | null
           confidence_score: number | null
           latitude: number | null
           longitude: number | null
@@ -146,7 +146,7 @@ export type Database = {
           book_id?: string | null
           scan_method: string
           scanned_at?: string
-          raw_data?: any | null
+          raw_data?: Record<string, unknown> | null
           confidence_score?: number | null
           latitude?: number | null
           longitude?: number | null
@@ -158,7 +158,7 @@ export type Database = {
           book_id?: string | null
           scan_method?: string
           scanned_at?: string
-          raw_data?: any | null
+          raw_data?: Record<string, unknown> | null
           confidence_score?: number | null
           latitude?: number | null
           longitude?: number | null
@@ -229,7 +229,7 @@ export type Database = {
           status: string
           listed_at: string | null
           ended_at: string | null
-          ebay_response: any | null
+          ebay_response: Record<string, unknown> | null
           created_at: string
           updated_at: string
         }
@@ -249,7 +249,7 @@ export type Database = {
           status?: string
           listed_at?: string | null
           ended_at?: string | null
-          ebay_response?: any | null
+          ebay_response?: Record<string, unknown> | null
           created_at?: string
           updated_at?: string
         }
@@ -269,7 +269,7 @@ export type Database = {
           status?: string
           listed_at?: string | null
           ended_at?: string | null
-          ebay_response?: any | null
+          ebay_response?: Record<string, unknown> | null
           created_at?: string
           updated_at?: string
         }

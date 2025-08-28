@@ -1,5 +1,4 @@
-import { BookOpen, Camera, Zap, TrendingUp, Shield, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { BookOpen, Camera, Zap, TrendingUp, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
