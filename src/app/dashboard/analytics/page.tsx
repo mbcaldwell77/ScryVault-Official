@@ -1,4 +1,4 @@
-import { BookOpen, TrendingUp, BarChart3, DollarSign, Users, Calendar } from "lucide-react";
+import { BookOpen, TrendingUp, BarChart3, DollarSign } from "lucide-react";
 
 export default function AnalyticsPage() {
   return (
