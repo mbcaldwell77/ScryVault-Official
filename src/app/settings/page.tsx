@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, User, Bell, Shield, Palette, Database, CreditCard, HelpCircle, LogOut } from "lucide-react";
+import { User, Bell, Shield, Palette, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import Sidebar from "../components/Sidebar";
 

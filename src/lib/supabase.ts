@@ -8,6 +8,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true
+  },
+  // Optimize for performance
+  global: {
+    headers: {
+      'X-Client-Info': 'scryvault-web'
+    }
   }
 })
 
@@ -138,7 +144,7 @@ export const lookupBookByISBN = async (isbn: string): Promise<BookData | null> =
     console.log(`Successfully found book: ${bookData.title}`)
     return bookData
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error looking up book by ISBN:', error)
     return null
   }
@@ -150,7 +156,7 @@ const convertISBN10to13 = (isbn10: string): string | null => {
     if (isbn10.length !== 10) return null
 
     const base = isbn10.substring(0, 9)
-    const checkDigit = isbn10.charAt(9)
+    // const checkDigit = isbn10.charAt(9) // Not used in ISBN-13 conversion
 
     // Add 978 prefix
     const isbn13Base = '978' + base
@@ -164,7 +170,7 @@ const convertISBN10to13 = (isbn10: string): string | null => {
     const checkDigit13 = (10 - (sum % 10)) % 10
 
     return isbn13Base + checkDigit13.toString()
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn('Error converting ISBN-10 to ISBN-13:', error)
     return null
   }
@@ -210,7 +216,7 @@ export const searchBooks = async (query: string, maxResults: number = 5): Promis
     }
 
     return (data.items || []).map(normalizeGoogleBooksData)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error searching books:', error)
     return []
   }
@@ -339,7 +345,7 @@ export type Database = {
           book_id: string | null
           scan_method: string
           scanned_at: string
-          raw_data: any | null
+          raw_data: Record<string, unknown> | null
           confidence_score: number | null
           latitude: number | null
           longitude: number | null
@@ -351,7 +357,7 @@ export type Database = {
           book_id?: string | null
           scan_method: string
           scanned_at?: string
-          raw_data?: any | null
+          raw_data?: Record<string, unknown> | null
           confidence_score?: number | null
           latitude?: number | null
           longitude?: number | null
@@ -363,7 +369,7 @@ export type Database = {
           book_id?: string | null
           scan_method?: string
           scanned_at?: string
-          raw_data?: any | null
+          raw_data?: Record<string, unknown> | null
           confidence_score?: number | null
           latitude?: number | null
           longitude?: number | null
@@ -434,7 +440,7 @@ export type Database = {
           status: string
           listed_at: string | null
           ended_at: string | null
-          ebay_response: any | null
+          ebay_response: Record<string, unknown> | null
           created_at: string
           updated_at: string
         }
@@ -454,7 +460,7 @@ export type Database = {
           status?: string
           listed_at?: string | null
           ended_at?: string | null
-          ebay_response?: any | null
+          ebay_response?: Record<string, unknown> | null
           created_at?: string
           updated_at?: string
         }
@@ -474,7 +480,7 @@ export type Database = {
           status?: string
           listed_at?: string | null
           ended_at?: string | null
-          ebay_response?: any | null
+          ebay_response?: Record<string, unknown> | null
           created_at?: string
           updated_at?: string
         }

@@ -2,14 +2,19 @@
 
 import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
-import Sidebar from "../components/Sidebar";
+import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 
+// Dynamically import Sidebar to reduce initial bundle size
+const Sidebar = dynamic(() => import("../components/Sidebar"), {
+  ssr: false,
+  loading: () => <div className="fixed inset-y-0 left-0 w-64 bg-gray-900/95 backdrop-blur-sm border-r border-gray-700/50" />
+});
+
 export default function InventoryPage() {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [books, setBooks] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Record<string, unknown>[]>([]);
+  const [books, setBooks] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,9 +55,9 @@ export default function InventoryPage() {
       setCategories(categoriesData || []);
       setBooks(booksData || []);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Supabase connection error:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }
@@ -78,7 +83,7 @@ export default function InventoryPage() {
           condition: "very_good",
           purchase_price: 15.99,
           asking_price: 25.00,
-          category_id: categories.find(c => c.name === 'Fiction')?.id,
+          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fiction')?.id as string,
           tags: ["classic", "american literature", "jazz age"],
           status: "draft"
         },
@@ -94,7 +99,7 @@ export default function InventoryPage() {
           condition: "like_new",
           purchase_price: 18.99,
           asking_price: 35.00,
-          category_id: categories.find(c => c.name === 'Non-Fiction')?.id,
+          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Non-Fiction')?.id as string,
           tags: ["history", "anthropology", "bestseller"],
           status: "draft"
         },
@@ -110,7 +115,7 @@ export default function InventoryPage() {
           condition: "good",
           purchase_price: 12.99,
           asking_price: 40.00,
-          category_id: categories.find(c => c.name === 'Science Fiction')?.id,
+          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Science Fiction')?.id as string,
           tags: ["sci-fi", "space opera", "desert planet"],
           status: "draft"
         },
@@ -126,7 +131,7 @@ export default function InventoryPage() {
           condition: "new",
           purchase_price: 16.99,
           asking_price: 22.00,
-          category_id: categories.find(c => c.name === 'Mystery')?.id,
+          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Mystery')?.id as string,
           tags: ["thriller", "psychological", "mystery"],
           status: "draft"
         },
@@ -142,7 +147,7 @@ export default function InventoryPage() {
           condition: "very_good",
           purchase_price: 14.99,
           asking_price: 28.00,
-          category_id: categories.find(c => c.name === 'Biography')?.id,
+          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Biography')?.id as string,
           tags: ["memoir", "education", "survival"],
           status: "draft"
         }
@@ -163,9 +168,9 @@ export default function InventoryPage() {
       await fetchData();
 
       alert('Sample books added successfully! 🎉');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error adding sample books:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }
@@ -278,18 +283,18 @@ export default function InventoryPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {categories.map((category) => (
                 <div
-                  key={category.id}
+                  key={category.id as string}
                   className="bg-gray-700/30 rounded-lg p-4 text-center border border-gray-600/30"
-                  style={{ borderLeftColor: category.color, borderLeftWidth: '4px' }}
+                  style={{ borderLeftColor: category.color as string, borderLeftWidth: '4px' }}
                 >
                   <div
                     className="w-8 h-8 rounded-lg mx-auto mb-2 flex items-center justify-center text-white text-sm font-bold"
-                    style={{ backgroundColor: category.color }}
+                    style={{ backgroundColor: category.color as string }}
                   >
-                    {category.name.charAt(0)}
+                    {(category.name as string).charAt(0)}
                   </div>
-                  <p className="text-white font-medium text-sm">{category.name}</p>
-                  <p className="text-gray-400 text-xs mt-1">{category.description}</p>
+                  <p className="text-white font-medium text-sm">{category.name as string}</p>
+                  <p className="text-gray-400 text-xs mt-1">{category.description as string}</p>
                 </div>
               ))}
             </div>
@@ -341,29 +346,29 @@ export default function InventoryPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-700/50">
                   {books.map((book) => (
-                    <tr key={book.id}>
+                    <tr key={book.id as string}>
                       <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-white">{book.title}</div>
-                        <div className="text-sm text-gray-400">{book.authors?.join(', ')}</div>
+                        <div className="text-sm font-medium text-white">{book.title as string}</div>
+                        <div className="text-sm text-gray-400">{(book.authors as string[])?.join(', ')}</div>
                       </td>
-                      <td className="px-6 py-4 text-gray-300">{book.isbn}</td>
+                      <td className="px-6 py-4 text-gray-300">{book.isbn as string}</td>
                       <td className="px-6 py-4">
                         <span className={cn(
                           "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
-                          book.status === "Listed" && "bg-blue-500/20 text-blue-400",
-                          book.status === "Sold" && "bg-green-500/20 text-green-400",
-                          book.status === "draft" && "bg-yellow-500/20 text-yellow-400"
+                          (book.status as string) === "Listed" && "bg-blue-500/20 text-blue-400",
+                          (book.status as string) === "Sold" && "bg-green-500/20 text-green-400",
+                          (book.status as string) === "draft" && "bg-yellow-500/20 text-yellow-400"
                         )}>
-                          {book.status?.charAt(0).toUpperCase() + book.status?.slice(1)}
+                          {(book.status as string)?.charAt(0).toUpperCase() + (book.status as string)?.slice(1)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-white">${book.asking_price?.toFixed(2)}</td>
-                      <td className="px-6 py-4 text-gray-300">${book.purchase_price?.toFixed(2)}</td>
-                      <td className="px-6 py-4">
-                        <div className="text-emerald-400 font-semibold">${(book.asking_price - book.purchase_price).toFixed(2)}</div>
-                        <div className="text-emerald-400 text-sm">
-                          {Math.round(((book.asking_price - book.purchase_price) / book.asking_price) * 100)}%
-                        </div>
+                                              <td className="px-6 py-4 text-white">${(book.asking_price as number)?.toFixed(2)}</td>
+                        <td className="px-6 py-4 text-gray-300">${(book.purchase_price as number)?.toFixed(2)}</td>
+                        <td className="px-6 py-4">
+                          <div className="text-emerald-400 font-semibold">${((book.asking_price as number) - (book.purchase_price as number)).toFixed(2)}</div>
+                          <div className="text-emerald-400 text-sm">
+                            {Math.round((((book.asking_price as number) - (book.purchase_price as number)) / (book.asking_price as number)) * 100)}%
+                          </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex space-x-3">

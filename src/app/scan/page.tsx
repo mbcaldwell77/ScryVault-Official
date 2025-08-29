@@ -1,10 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, Camera, Search, Upload, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2 } from "lucide-react";
+import { Sparkles, Search, Upload, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
-import Sidebar from "../components/Sidebar";
-import { lookupBookByISBN, validateISBN, searchBooks, BookData, supabaseService } from "@/lib/supabase";
+import Image from "next/image";
+import dynamic from "next/dynamic";
+import { lookupBookByISBN, validateISBN, BookData, supabaseService } from "@/lib/supabase";
+
+// Dynamically import Sidebar to reduce initial bundle size
+const Sidebar = dynamic(() => import("../components/Sidebar"), {
+  ssr: false,
+  loading: () => <div className="fixed inset-y-0 left-0 w-64 bg-gray-900/95 backdrop-blur-sm border-r border-gray-700/50" />
+});
 
 interface ManualBookData {
   title: string;
@@ -21,14 +28,14 @@ interface ManualBookData {
 }
 
 export default function ScanPage() {
-  const [activeMode, setActiveMode] = useState<'camera' | 'manual' | 'upload'>('manual');
+  // const [activeMode, setActiveMode] = useState<'camera' | 'manual' | 'upload'>('manual');
   const [isbnInput, setIsbnInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [bookData, setBookData] = useState<BookData | null>(null);
   const [showManualForm, setShowManualForm] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recentBooks, setRecentBooks] = useState<any[]>([]);
+  const [recentBooks, setRecentBooks] = useState<Record<string, unknown>[]>([]);
   const [manualBookData, setManualBookData] = useState<ManualBookData>({
     title: '',
     authors: [],
@@ -128,7 +135,7 @@ export default function ScanPage() {
       setIsLoading(true);
       setError(null);
 
-      const { data, error } = await supabaseService
+      const { error } = await supabaseService
         .from('books')
         .insert([{
           user_id: '550e8400-e29b-41d4-a716-446655440000', // Demo user ID
@@ -144,8 +151,7 @@ export default function ScanPage() {
           purchase_price: bookDataToSave.purchasePrice || null,
           asking_price: bookDataToSave.askingPrice || null,
           status: 'draft'
-        }])
-        .select();
+        }]);
 
       if (error) {
         console.error('Error saving book:', error);
@@ -325,9 +331,11 @@ export default function ScanPage() {
                   {/* Book Cover */}
                   <div className="flex-shrink-0">
                     {bookData.imageUrl ? (
-                      <img
+                      <Image
                         src={bookData.imageUrl}
                         alt={bookData.title}
+                        width={128}
+                        height={192}
                         className="w-32 h-48 object-cover rounded-lg shadow-lg"
                       />
                     ) : (
@@ -521,20 +529,20 @@ export default function ScanPage() {
               {recentBooks.length > 0 ? (
                 <div className="space-y-4">
                   {recentBooks.map((book) => (
-                    <Link key={book.id} href="/inventory" className="flex items-center space-x-4 p-4 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors duration-200">
+                    <Link key={book.id as string} href="/inventory" className="flex items-center space-x-4 p-4 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-colors duration-200">
                       <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
                         <BookOpen className="w-6 h-6 text-emerald-400" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-white font-medium">{book.title}</p>
-                        <p className="text-gray-400 text-sm">ISBN: {book.isbn}</p>
+                        <p className="text-white font-medium">{book.title as string}</p>
+                        <p className="text-gray-400 text-sm">ISBN: {book.isbn as string}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-emerald-400 font-medium">
-                          ${book.asking_price?.toFixed(2) || 'N/A'}
+                          ${(book.asking_price as number)?.toFixed(2) || 'N/A'}
                         </p>
                         <p className="text-gray-400 text-xs">
-                          {new Date(book.created_at).toLocaleDateString()}
+                          {new Date(book.created_at as string).toLocaleDateString()}
                         </p>
                       </div>
                       <ArrowRight className="w-5 h-5 text-gray-400" />
