@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
@@ -15,12 +15,164 @@ const Sidebar = dynamic(() => import("../components/Sidebar"), {
 export default function InventoryPage() {
   const [categories, setCategories] = useState<Record<string, unknown>[]>([]);
   const [books, setBooks] = useState<Record<string, unknown>[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<Record<string, unknown>[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortField, setSortField] = useState<string>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedBook, setSelectedBook] = useState<Record<string, unknown> | null>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Calculate real metrics from book data
+  const calculateMetrics = (bookList: Record<string, unknown>[]) => {
+    const totalValue = bookList.reduce((sum, book) => {
+      return sum + ((book.asking_price as number) || 0);
+    }, 0);
+
+    const soldBooks = bookList.filter(book => (book.status as string) === 'sold').length;
+
+    const totalProfit = bookList.reduce((sum, book) => {
+      const askingPrice = (book.asking_price as number) || 0;
+      const purchasePrice = (book.purchase_price as number) || 0;
+      return sum + (askingPrice - purchasePrice);
+    }, 0);
+
+    return {
+      totalValue,
+      soldBooks,
+      totalProfit
+    };
+  };
+
+  // Sort books by field and direction
+  const sortBooks = (books: Record<string, unknown>[], field: string, direction: 'asc' | 'desc') => {
+    return [...books].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (field) {
+        case 'title':
+          aValue = (a.title as string)?.toLowerCase() || '';
+          bValue = (b.title as string)?.toLowerCase() || '';
+          break;
+        case 'asking_price':
+          aValue = (a.asking_price as number) || 0;
+          bValue = (b.asking_price as number) || 0;
+          break;
+        case 'purchase_price':
+          aValue = (a.purchase_price as number) || 0;
+          bValue = (b.purchase_price as number) || 0;
+          break;
+        case 'profit':
+          aValue = ((a.asking_price as number) || 0) - ((a.purchase_price as number) || 0);
+          bValue = ((b.asking_price as number) || 0) - ((b.purchase_price as number) || 0);
+          break;
+        case 'created_at':
+        default:
+          aValue = new Date(a.created_at as string);
+          bValue = new Date(b.created_at as string);
+          break;
+      }
+
+      if (direction === 'asc') {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      } else {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+      }
+    });
+  };
+
+  // Handle column header click for sorting
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Action handlers
+  const handleViewBook = (book: Record<string, unknown>) => {
+    setSelectedBook(book);
+    setShowViewModal(true);
+  };
+
+  const handleEditBook = (book: Record<string, unknown>) => {
+    setSelectedBook(book);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteBook = async (book: Record<string, unknown>) => {
+    if (window.confirm(`Are you sure you want to delete "${book.title as string}"? This action cannot be undone.`)) {
+      try {
+        const { error } = await supabase
+          .from('books')
+          .delete()
+          .eq('id', book.id);
+
+        if (error) {
+          console.error('Error deleting book:', error);
+          alert('Failed to delete book. Please try again.');
+          return;
+        }
+
+        // Refresh data after deletion
+        await fetchData();
+        alert(`"${book.title as string}" has been deleted from your inventory.`);
+      } catch (err) {
+        console.error('Error deleting book:', err);
+        alert('An unexpected error occurred while deleting the book.');
+      }
+    }
+  };
+
+  const closeModals = () => {
+    setShowViewModal(false);
+    setShowEditModal(false);
+    setShowDeleteModal(false);
+    setSelectedBook(null);
+  };
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Filter books based on search term and status filter
+  useEffect(() => {
+    let filtered = books;
+
+    // Apply status filter first
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((book) => {
+        const status = (book.status as string)?.toLowerCase() || '';
+        return status === statusFilter.toLowerCase();
+      });
+    }
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter((book) => {
+        const title = (book.title as string)?.toLowerCase() || '';
+        const authors = (book.authors as string[])?.join(' ')?.toLowerCase() || '';
+        const isbn = (book.isbn as string)?.toLowerCase() || '';
+
+        const searchLower = searchTerm.toLowerCase();
+
+        return title.includes(searchLower) ||
+               authors.includes(searchLower) ||
+               isbn.includes(searchLower);
+      });
+    }
+
+    // Apply sorting
+    const sorted = sortBooks(filtered, sortField, sortDirection);
+    setFilteredBooks(sorted);
+  }, [books, searchTerm, statusFilter, sortField, sortDirection]);
 
   const fetchData = async () => {
     try {
@@ -54,6 +206,7 @@ export default function InventoryPage() {
 
       setCategories(categoriesData || []);
       setBooks(booksData || []);
+      setFilteredBooks(booksData || []);
       setError(null);
     } catch (err: unknown) {
       console.error('Supabase connection error:', err);
@@ -226,12 +379,12 @@ export default function InventoryPage() {
         <div className="p-6">
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm">Total Books</p>
-                <p className="text-3xl font-bold text-white">{loading ? '...' : books.length}</p>
+                <p className="text-3xl font-bold text-white">{loading ? '...' : filteredBooks.length}</p>
               </div>
               <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
                 <BookOpen className="w-6 h-6 text-emerald-400" />
@@ -255,7 +408,7 @@ export default function InventoryPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm">Sold</p>
-                <p className="text-3xl font-bold text-white">355</p>
+                <p className="text-3xl font-bold text-white">{loading ? '...' : calculateMetrics(filteredBooks).soldBooks}</p>
               </div>
               <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-green-400" />
@@ -267,10 +420,22 @@ export default function InventoryPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm">Total Value</p>
-                <p className="text-3xl font-bold text-white">$45,230</p>
+                <p className="text-3xl font-bold text-white">${loading ? '...' : calculateMetrics(filteredBooks).totalValue.toFixed(2)}</p>
               </div>
               <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-purple-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Profit</p>
+                <p className="text-3xl font-bold text-white">${loading ? '...' : calculateMetrics(filteredBooks).totalProfit.toFixed(2)}</p>
+              </div>
+              <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-cyan-400" />
               </div>
             </div>
           </div>
@@ -320,7 +485,7 @@ export default function InventoryPage() {
         )}
 
         {/* Books Display */}
-        {!loading && books.length > 0 && (
+        {!loading && filteredBooks.length > 0 && (
           <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl overflow-hidden mb-8">
             <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
               <h3 className="text-lg font-semibold text-white">Your Books</h3>
@@ -335,17 +500,65 @@ export default function InventoryPage() {
               <table className="w-full">
                 <thead className="bg-gray-700/30">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Book</th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
+                      onClick={() => handleSort('title')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Book</span>
+                        {sortField === 'title' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-50" />
+                        )}
+                      </div>
+                    </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ISBN</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">List Price</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">COGS</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Profit</th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
+                      onClick={() => handleSort('asking_price')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>List Price</span>
+                        {sortField === 'asking_price' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-50" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
+                      onClick={() => handleSort('purchase_price')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>COGS</span>
+                        {sortField === 'purchase_price' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-50" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
+                      onClick={() => handleSort('profit')}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Profit</span>
+                        {sortField === 'profit' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-50" />
+                        )}
+                      </div>
+                    </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700/50">
-                  {books.map((book) => (
+                  {filteredBooks.map((book) => (
                     <tr key={book.id as string}>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-white">{book.title as string}</div>
@@ -372,13 +585,25 @@ export default function InventoryPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex space-x-3">
-                          <button className="text-blue-400 hover:text-blue-300">
+                          <button
+                            onClick={() => handleViewBook(book)}
+                            className="text-blue-400 hover:text-blue-300 transition-colors"
+                            title="View Details"
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="text-gray-400 hover:text-gray-300">
+                          <button
+                            onClick={() => handleEditBook(book)}
+                            className="text-gray-400 hover:text-gray-300 transition-colors"
+                            title="Edit Book"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="text-red-400 hover:text-red-300">
+                          <button
+                            onClick={() => handleDeleteBook(book)}
+                            className="text-red-400 hover:text-red-300 transition-colors"
+                            title="Delete Book"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -399,6 +624,8 @@ export default function InventoryPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search books by title, author, or ISBN..."
                   className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 />
@@ -409,11 +636,15 @@ export default function InventoryPage() {
                 <Filter className="w-4 h-4" />
                 <span>Filter</span>
               </button>
-              <select className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500">
-                <option>All Status</option>
-                <option>Listed</option>
-                <option>Sold</option>
-                <option>Draft</option>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
+              >
+                <option value="all">All Status</option>
+                <option value="draft">Draft</option>
+                <option value="listed">Listed</option>
+                <option value="sold">Sold</option>
               </select>
             </div>
           </div>
@@ -440,6 +671,91 @@ export default function InventoryPage() {
         </div>
         </div>
       </div>
+
+      {/* View Book Modal */}
+      {showViewModal && selectedBook && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <h2 className="text-xl font-semibold text-white">Book Details</h2>
+              <button
+                onClick={closeModals}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2">{selectedBook.title as string}</h3>
+                  <p className="text-gray-300">by {(selectedBook.authors as string[])?.join(', ')}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-400 text-sm">ISBN</p>
+                    <p className="text-white">{selectedBook.isbn as string}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Status</p>
+                    <span className={cn(
+                      "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                      (selectedBook.status as string) === "Listed" && "bg-blue-500/20 text-blue-400",
+                      (selectedBook.status as string) === "Sold" && "bg-green-500/20 text-green-400",
+                      (selectedBook.status as string) === "draft" && "bg-yellow-500/20 text-yellow-400"
+                    )}>
+                      {(selectedBook.status as string)?.charAt(0).toUpperCase() + (selectedBook.status as string)?.slice(1)}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Purchase Price</p>
+                    <p className="text-white">${(selectedBook.purchase_price as number)?.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Asking Price</p>
+                    <p className="text-white">${(selectedBook.asking_price as number)?.toFixed(2)}</p>
+                  </div>
+                </div>
+                {(selectedBook.description as string) && (
+                  <div>
+                    <p className="text-gray-400 text-sm mb-2">Description</p>
+                    <p className="text-gray-300 text-sm leading-relaxed">{selectedBook.description as string}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Book Modal - Placeholder for now */}
+      {showEditModal && selectedBook && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-xl max-w-2xl w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <h2 className="text-xl font-semibold text-white">Edit Book</h2>
+              <button
+                onClick={closeModals}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="text-center py-8">
+                <p className="text-gray-300 mb-4">Edit functionality coming soon!</p>
+                <p className="text-gray-400 text-sm">For now, you can edit books on the scan page.</p>
+                <button
+                  onClick={closeModals}
+                  className="mt-4 bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
