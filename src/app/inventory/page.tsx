@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
@@ -25,7 +25,6 @@ export default function InventoryPage() {
   const [selectedBook, setSelectedBook] = useState<Record<string, unknown> | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Calculate real metrics from book data
   const calculateMetrics = (bookList: Record<string, unknown>[]) => {
@@ -51,8 +50,8 @@ export default function InventoryPage() {
   // Sort books by field and direction
   const sortBooks = (books: Record<string, unknown>[], field: string, direction: 'asc' | 'desc') => {
     return [...books].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      let aValue: string | number | Date;
+      let bValue: string | number | Date;
 
       switch (field) {
         case 'title':
@@ -134,7 +133,6 @@ export default function InventoryPage() {
   const closeModals = () => {
     setShowViewModal(false);
     setShowEditModal(false);
-    setShowDeleteModal(false);
     setSelectedBook(null);
   };
 
