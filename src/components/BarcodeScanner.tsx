@@ -9,20 +9,7 @@ interface BarcodeScannerProps {
   isOpen: boolean;
 }
 
-interface QuaggaResult {
-  codeResult: {
-    code: string;
-  };
-}
 
-interface QuaggaProcessedResult {
-  boxes?: unknown[];
-  box?: unknown;
-  codeResult?: {
-    code: string;
-  };
-  line?: unknown;
-}
 
 export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScannerProps) {
   const scannerRef = useRef<HTMLDivElement>(null);
