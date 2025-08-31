@@ -28,15 +28,54 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
         
         if (!scannerRef.current) return;
 
+        // Ensure camera access (prompts user if needed)
+        const ensureCameraAccess = async (): Promise<boolean> => {
+          if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+            setError('Camera not supported or HTTPS not enabled.');
+            return false;
+          }
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: { ideal: 'environment' } }
+            });
+            // Immediately stop the preview permission stream; Quagga will open its own
+            stream.getTracks().forEach((t) => t.stop());
+            return true;
+          } catch (e: unknown) {
+            const err = e as { name?: string };
+            switch (err?.name) {
+              case 'NotAllowedError':
+              case 'SecurityError':
+                setError('Camera permission denied. Enable camera access in your browser settings.');
+                break;
+              case 'NotFoundError':
+                setError('No camera device found.');
+                break;
+              case 'NotReadableError':
+                setError('Camera is in use by another application.');
+                break;
+              case 'OverconstrainedError':
+                setError('Requested camera constraints are not available on this device.');
+                break;
+              default:
+                setError('Failed to access camera. Please check permissions.');
+            }
+            return false;
+          }
+        };
+
+        const hasAccess = await ensureCameraAccess();
+        if (!hasAccess) return;
+
         Quagga.init({
           inputStream: {
             name: "Live",
             type: "LiveStream",
             target: scannerRef.current,
             constraints: {
-              width: { min: 640 },
-              height: { min: 480 },
-              facingMode: "environment", // Use back camera on mobile
+              width: { min: 480 },
+              height: { min: 320 },
+              facingMode: { ideal: "environment" }, // Prefer back camera on mobile
               aspectRatio: { min: 1, max: 2 }
             },
           },
