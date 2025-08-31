@@ -573,8 +573,8 @@ export default function InventoryPage() {
                  Add More Samples
                </button>
              </div>
-                         {/* Mobile Card View - Hidden on larger screens */}
-             <div className="lg:hidden space-y-4 p-6">
+                         {/* Mobile/Tablet Card View - Hidden on desktop */}
+             <div className="xl:hidden space-y-4 p-6">
                {filteredBooks.map((book) => {
                  const profit = ((book.asking_price as number) || 0) - ((book.purchase_price as number) || 0);
                  const profitPercentage = ((book.asking_price as number) || 0) > 0 ? (profit / ((book.asking_price as number) || 0)) * 100 : 0;
@@ -586,7 +586,7 @@ export default function InventoryPage() {
                          <h4 className="font-medium text-white text-sm">{book.title as string}</h4>
                          <p className="text-gray-400 text-xs">{(book.authors as string[])?.join(', ')}</p>
                        </div>
-                       <div className="flex space-x-1 ml-3">
+                                               <div className="flex space-x-1 md:space-x-2 ml-3">
                          <button
                            onClick={() => handleViewBook(book)}
                            className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
@@ -611,7 +611,7 @@ export default function InventoryPage() {
                        </div>
                      </div>
                      
-                     <div className="grid grid-cols-2 gap-3 text-xs">
+                                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                        <div>
                          <span className="text-gray-400">ISBN:</span>
                          <span className="text-white ml-1">{book.isbn as string}</span>
@@ -635,18 +635,18 @@ export default function InventoryPage() {
                          <span className="text-gray-400">COGS:</span>
                          <span className="text-white ml-1">${(book.purchase_price as number)?.toFixed(2)}</span>
                        </div>
-                       <div className="col-span-2">
-                         <span className="text-gray-400">Profit:</span>
-                         <span className="text-emerald-400 font-semibold ml-1">${profit.toFixed(2)} ({profitPercentage.toFixed(1)}%)</span>
-                       </div>
+                                               <div className="col-span-2 md:col-span-3">
+                          <span className="text-gray-400">Profit:</span>
+                          <span className="text-emerald-400 font-semibold ml-1">${profit.toFixed(2)} ({profitPercentage.toFixed(1)}%)</span>
+                        </div>
                      </div>
                    </div>
                  );
                })}
              </div>
 
-             {/* Desktop Table View - Hidden on mobile */}
-             <div className="hidden lg:block overflow-x-auto relative">
+             {/* Desktop Table View - Hidden on mobile/tablet */}
+             <div className="hidden xl:block overflow-x-auto relative">
                {/* Scroll indicator */}
                <div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-gray-800/50 to-transparent pointer-events-none z-10"></div>
                <table className="w-full min-w-[1200px]">
