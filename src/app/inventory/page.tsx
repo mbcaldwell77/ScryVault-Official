@@ -17,6 +17,11 @@ export default function InventoryPage() {
   const [filteredBooks, setFilteredBooks] = useState<Record<string, unknown>[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [conditionFilter, setConditionFilter] = useState<string>('all');
+  const [priceRange, setPriceRange] = useState<{ min: string; max: string }>({ min: '', max: '' });
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [loading, setLoading] = useState(true);
@@ -102,6 +107,24 @@ export default function InventoryPage() {
     }
   };
 
+  // Filter helper functions
+  const toggleAdvancedFilters = () => {
+    setShowAdvancedFilters(!showAdvancedFilters);
+  };
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setCategoryFilter('all');
+    setConditionFilter('all');
+    setPriceRange({ min: '', max: '' });
+    setDateRange({ start: '', end: '' });
+  };
+
+  const normalizeISBN = (isbn: string): string => {
+    return isbn.replace(/[-\s]/g, '').toLowerCase();
+  };
+
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToastMessage(message);
     setToastType(type);
@@ -168,15 +191,51 @@ export default function InventoryPage() {
     fetchData();
   }, []);
 
-  // Filter books based on search term and status filter
+  // Filter books based on all filters
   useEffect(() => {
     let filtered = books;
 
-    // Apply status filter first
+    // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter((book) => {
         const status = (book.status as string)?.toLowerCase() || '';
         return status === statusFilter.toLowerCase();
+      });
+    }
+
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter((book) => {
+        const categoryId = (book.category_id as string) || '';
+        return categoryId === categoryFilter;
+      });
+    }
+
+    // Apply condition filter
+    if (conditionFilter !== 'all') {
+      filtered = filtered.filter((book) => {
+        const condition = (book.condition as string)?.toLowerCase() || '';
+        return condition === conditionFilter.toLowerCase();
+      });
+    }
+
+    // Apply price range filter
+    if (priceRange.min || priceRange.max) {
+      filtered = filtered.filter((book) => {
+        const price = (book.asking_price as number) || 0;
+        const min = priceRange.min ? parseFloat(priceRange.min) : 0;
+        const max = priceRange.max ? parseFloat(priceRange.max) : Infinity;
+        return price >= min && price <= max;
+      });
+    }
+
+    // Apply date range filter
+    if (dateRange.start || dateRange.end) {
+      filtered = filtered.filter((book) => {
+        const bookDate = new Date(book.created_at as string);
+        const startDate = dateRange.start ? new Date(dateRange.start) : new Date(0);
+        const endDate = dateRange.end ? new Date(dateRange.end) : new Date();
+        return bookDate >= startDate && bookDate <= endDate;
       });
     }
 
@@ -185,20 +244,29 @@ export default function InventoryPage() {
       filtered = filtered.filter((book) => {
         const title = (book.title as string)?.toLowerCase() || '';
         const authors = (book.authors as string[])?.join(' ')?.toLowerCase() || '';
-        const isbn = (book.isbn as string)?.toLowerCase() || '';
+        const isbn = (book.isbn as string) || '';
+        const publisher = (book.publisher as string)?.toLowerCase() || '';
 
         const searchLower = searchTerm.toLowerCase();
+        const normalizedSearchISBN = normalizeISBN(searchTerm);
 
-        return title.includes(searchLower) ||
-               authors.includes(searchLower) ||
-               isbn.includes(searchLower);
+        // Check text fields normally
+        const titleMatch = title.includes(searchLower);
+        const authorMatch = authors.includes(searchLower);
+        const publisherMatch = publisher.includes(searchLower);
+
+        // Check ISBN with and without hyphens
+        const isbnMatch = isbn.includes(searchLower) ||
+                         normalizeISBN(isbn).includes(normalizedSearchISBN);
+
+        return titleMatch || authorMatch || isbnMatch || publisherMatch;
       });
     }
 
     // Apply sorting
     const sorted = sortBooks(filtered, sortField, sortDirection);
     setFilteredBooks(sorted);
-  }, [books, searchTerm, statusFilter, sortField, sortDirection]);
+  }, [books, searchTerm, statusFilter, categoryFilter, conditionFilter, priceRange, dateRange, sortField, sortDirection]);
 
   const fetchData = async () => {
     try {
@@ -239,6 +307,35 @@ export default function InventoryPage() {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const addMissingCategories = async () => {
+    try {
+      const missingCategories = [
+        { name: 'Fantasy', description: 'Fantasy novels, magical worlds, and supernatural fiction', color: '#a855f7' },
+        { name: 'Vintage', description: 'Classic and vintage books from previous decades', color: '#fbbf24' },
+        { name: 'Antique', description: 'Rare and antique books with historical value', color: '#dc2626' },
+        { name: 'Activity', description: 'Activity books, workbooks, and interactive materials', color: '#059669' }
+      ];
+
+             for (const category of missingCategories) {
+         const { error } = await supabase
+           .from('categories')
+           .insert([category]);
+
+         if (error && !error.message.includes('duplicate key')) {
+           console.error('Error inserting category:', error);
+           throw error;
+         }
+       }
+
+      // Refresh categories after adding
+      await fetchData();
+      showToast('Missing categories added successfully!', 'success');
+    } catch (err) {
+      console.error('Error adding missing categories:', err);
+      showToast('Failed to add missing categories', 'error');
     }
   };
 
@@ -315,43 +412,96 @@ export default function InventoryPage() {
           tags: ["thriller", "psychological", "mystery"],
           status: "draft"
         },
-        {
-          title: "Educated",
-          authors: ["Tara Westover"],
-          isbn: "978-0-399-59050-4",
-          publisher: "Random House",
-          published_date: "2018-02-20",
-          page_count: 334,
-          language: "English",
-          description: "A memoir about a woman who grows up in a survivalist Mormon family and eventually earns a PhD from Cambridge University.",
-          condition: "very_good",
-          purchase_price: 14.99,
-          asking_price: 28.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Biography')?.id as string,
-          tags: ["memoir", "education", "survival"],
-          status: "draft"
-        }
+                 {
+           title: "Educated",
+           authors: ["Tara Westover"],
+           isbn: "978-0-399-59050-4",
+           publisher: "Random House",
+           published_date: "2018-02-20",
+           page_count: 334,
+           language: "English",
+           description: "A memoir about a woman who grows up in a survivalist Mormon family and eventually earns a PhD from Cambridge University.",
+           condition: "very_good",
+           purchase_price: 14.99,
+           asking_price: 28.00,
+           category_id: categories.find((c: Record<string, unknown>) => c.name === 'Biography')?.id as string,
+           tags: ["memoir", "education", "survival"],
+           status: "draft"
+         },
+         {
+           title: "The Catcher in the Rye",
+           authors: ["J.D. Salinger"],
+           isbn: "0316769487",
+           publisher: "Little, Brown and Company",
+           published_date: "1951-07-16",
+           page_count: 277,
+           language: "English",
+           description: "A classic coming-of-age novel about teenage alienation and loss of innocence.",
+           condition: "good",
+           purchase_price: 8.99,
+           asking_price: 18.00,
+           category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fiction')?.id as string,
+           tags: ["classic", "coming-of-age", "american literature"],
+           status: "draft"
+         },
+         {
+           title: "The Hobbit",
+           authors: ["J.R.R. Tolkien"],
+           isbn: "978-0-261-10221-4",
+           publisher: "George Allen & Unwin",
+           published_date: "1937-09-21",
+           page_count: 310,
+           language: "English",
+           description: "A fantasy novel about a hobbit's journey with dwarves to reclaim their homeland.",
+           condition: "very_good",
+           purchase_price: 12.99,
+           asking_price: 45.00,
+           category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fantasy')?.id as string,
+           tags: ["fantasy", "adventure", "classic"],
+           status: "draft"
+         },
+         {
+           title: "Vintage Cookbook Collection",
+           authors: ["Various"],
+           isbn: "978-0-123456-78-9",
+           publisher: "Vintage Press",
+           published_date: "1965-01-01",
+           page_count: 250,
+           language: "English",
+           description: "A collection of vintage recipes from the 1960s.",
+           condition: "acceptable",
+           purchase_price: 5.99,
+           asking_price: 25.00,
+           category_id: categories.find((c: Record<string, unknown>) => c.name === 'Vintage')?.id as string,
+           tags: ["vintage", "cookbook", "recipes"],
+           status: "draft"
+         }
       ];
 
-      for (const book of sampleBooks) {
-        const { error } = await supabase
-          .from('books')
-          .insert([book]);
+             for (const book of sampleBooks) {
+         const { error } = await supabase
+           .from('books')
+           .insert([{
+             ...book,
+             user_id: '550e8400-e29b-41d4-a716-446655440000' // Demo user ID
+           }]);
 
-        if (error) {
-          console.error('Error inserting book:', error);
-          throw error;
-        }
-      }
+         if (error) {
+           console.error('Error inserting book:', error);
+           throw error;
+         }
+       }
 
       // Refresh data after adding books
       await fetchData();
 
       showToast('Sample books added successfully! 🎉', 'success');
-    } catch (err: unknown) {
-      console.error('Error adding sample books:', err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-    } finally {
+         } catch (err: unknown) {
+       console.error('Error adding sample books:', err);
+       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+       setError(`Failed to add sample books: ${errorMessage}`);
+       showToast(`Failed to add sample books: ${errorMessage}`, 'error');
+     } finally {
       setLoading(false);
     }
   };
@@ -509,70 +659,248 @@ export default function InventoryPage() {
           </div>
         )}
 
-        {/* Sample Data Section */}
-        {!loading && books.length === 0 && (
-          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6 mb-8">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-white mb-2">Add Sample Books</h3>
-              <p className="text-gray-300 mb-4">
-                Your database is connected! Add some sample books to test the full functionality.
-              </p>
-              <button
-                onClick={addSampleBooks}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-blue-500/25"
-              >
-                Add 5 Sample Books 🎉
-              </button>
-            </div>
-          </div>
-        )}
-
-                 {/* Search and Filters - Moved above inventory */}
-         <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 mb-6">
-           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-             <div className="flex-1 max-w-md">
-               <div className="relative">
-                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                 <input
-                   type="text"
-                   value={searchTerm}
-                   onChange={(e) => setSearchTerm(e.target.value)}
-                   placeholder="Search books by title, author, or ISBN..."
-                   className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                 />
+                 {/* Sample Data Section - Only show in demo mode */}
+         {!loading && books.length === 0 && isDemoMode && (
+           <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6 mb-8">
+             <div className="text-center">
+               <h3 className="text-lg font-semibold text-white mb-2">Add Sample Books</h3>
+               <p className="text-gray-300 mb-4">
+                 Your database is connected! Add some sample books to test the full functionality.
+               </p>
+               <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                 <button
+                   onClick={addSampleBooks}
+                   className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-blue-500/25"
+                 >
+                   Add 5 Sample Books 🎉
+                 </button>
+                 <button
+                   onClick={addMissingCategories}
+                   className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg shadow-green-500/25"
+                 >
+                   Add Missing Categories 📚
+                 </button>
                </div>
              </div>
-             <div className="flex space-x-4">
-               <button className="flex items-center space-x-2 px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
-                 <Filter className="w-4 h-4" />
-                 <span>Filter</span>
-               </button>
-               <select
-                 value={statusFilter}
-                 onChange={(e) => setStatusFilter(e.target.value)}
-                 className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
-               >
-                 <option value="all">All Status</option>
-                 <option value="draft">Draft</option>
-                 <option value="listed">Listed</option>
-                 <option value="sold">Sold</option>
-               </select>
-             </div>
            </div>
-         </div>
+         )}
+
+                                   {/* Search and Filters - Moved above inventory */}
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+              <div className="flex-1 max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by title, author, ISBN (with or without hyphens), or publisher..."
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-4">
+                <button 
+                  onClick={toggleAdvancedFilters}
+                  className={cn(
+                    "flex items-center space-x-2 px-4 py-3 border rounded-lg transition-colors",
+                    showAdvancedFilters 
+                      ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400" 
+                      : "bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                  )}
+                >
+                  <Filter className="w-4 h-4" />
+                  <span>Advanced Filters</span>
+                </button>
+                <button 
+                  onClick={resetFilters}
+                  className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            {/* Advanced Filters Section */}
+            {showAdvancedFilters && (
+              <div className="mt-6 pt-6 border-t border-gray-700/50">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Status Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Status</label>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="draft">Draft</option>
+                      <option value="listed">Listed</option>
+                      <option value="sold">Sold</option>
+                    </select>
+                  </div>
+
+                  {/* Category Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="all">All Categories</option>
+                      {categories.map((category) => (
+                        <option key={category.id as string} value={category.id as string}>
+                          {category.name as string}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Condition Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Condition</label>
+                    <select
+                      value={conditionFilter}
+                      onChange={(e) => setConditionFilter(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="all">All Conditions</option>
+                      <option value="new">New</option>
+                      <option value="like_new">Like New</option>
+                      <option value="very_good">Very Good</option>
+                      <option value="good">Good</option>
+                      <option value="acceptable">Acceptable</option>
+                      <option value="poor">Poor</option>
+                    </select>
+                  </div>
+
+                  {/* Price Range Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Price Range</label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={priceRange.min}
+                        onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={priceRange.max}
+                        onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date Range Filter */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Date Added</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">From</label>
+                      <input
+                        type="date"
+                        value={dateRange.start}
+                        onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">To</label>
+                      <input
+                        type="date"
+                        value={dateRange.end}
+                        onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Filters Summary */}
+                <div className="mt-4 pt-4 border-t border-gray-700/50">
+                  <div className="flex flex-wrap gap-2">
+                    {statusFilter !== 'all' && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
+                        Status: {statusFilter}
+                        <button
+                          onClick={() => setStatusFilter('all')}
+                          className="ml-1 hover:text-blue-300"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                                         {categoryFilter !== 'all' && (
+                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400">
+                         Category: {categories.find(c => c.id === categoryFilter)?.name as string}
+                         <button
+                           onClick={() => setCategoryFilter('all')}
+                           className="ml-1 hover:text-purple-300"
+                         >
+                           ×
+                         </button>
+                       </span>
+                     )}
+                    {conditionFilter !== 'all' && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
+                        Condition: {conditionFilter}
+                        <button
+                          onClick={() => setConditionFilter('all')}
+                          className="ml-1 hover:text-green-300"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                    {(priceRange.min || priceRange.max) && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400">
+                        Price: ${priceRange.min || '0'} - ${priceRange.max || '∞'}
+                        <button
+                          onClick={() => setPriceRange({ min: '', max: '' })}
+                          className="ml-1 hover:text-yellow-300"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                    {(dateRange.start || dateRange.end) && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-cyan-500/20 text-cyan-400">
+                        Date: {dateRange.start || 'Any'} - {dateRange.end || 'Today'}
+                        <button
+                          onClick={() => setDateRange({ start: '', end: '' })}
+                          className="ml-1 hover:text-cyan-300"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
          {/* Books Display */}
          {!loading && filteredBooks.length > 0 && (
            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl overflow-hidden mb-8">
-             <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
-               <h3 className="text-lg font-semibold text-white">Your Books</h3>
-               <button
-                 onClick={addSampleBooks}
-                 className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-               >
-                 Add More Samples
-               </button>
-             </div>
+                           <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+                <h3 className="text-lg font-semibold text-white">Your Books</h3>
+                {isDemoMode && (
+                  <button
+                    onClick={addSampleBooks}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Add More Samples
+                  </button>
+                )}
+              </div>
                          {/* Mobile/Tablet Card View - Hidden on desktop */}
              <div className="xl:hidden space-y-4 p-6">
                {filteredBooks.map((book) => {
@@ -586,7 +914,7 @@ export default function InventoryPage() {
                          <h4 className="font-medium text-white text-sm">{book.title as string}</h4>
                          <p className="text-gray-400 text-xs">{(book.authors as string[])?.join(', ')}</p>
                        </div>
-                                               <div className="flex space-x-1 md:space-x-2 ml-3">
+                                               <div className="flex space-x-1 sm:space-x-2 ml-2 sm:ml-3">
                          <button
                            onClick={() => handleViewBook(book)}
                            className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
@@ -611,45 +939,63 @@ export default function InventoryPage() {
                        </div>
                      </div>
                      
-                                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                       <div>
-                         <span className="text-gray-400">ISBN:</span>
-                         <span className="text-white ml-1">{book.isbn as string}</span>
-                       </div>
-                       <div>
-                         <span className="text-gray-400">Status:</span>
-                         <span className={cn(
-                           "ml-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full",
-                           (book.status as string) === "Listed" && "bg-blue-500/20 text-blue-400",
-                           (book.status as string) === "Sold" && "bg-green-500/20 text-green-400",
-                           (book.status as string) === "draft" && "bg-yellow-500/20 text-yellow-400"
-                         )}>
-                           {(book.status as string)?.charAt(0).toUpperCase() + (book.status as string)?.slice(1)}
-                         </span>
-                       </div>
-                       <div>
-                         <span className="text-gray-400">List Price:</span>
-                         <span className="text-white ml-1">${(book.asking_price as number)?.toFixed(2)}</span>
-                       </div>
-                       <div>
-                         <span className="text-gray-400">COGS:</span>
-                         <span className="text-white ml-1">${(book.purchase_price as number)?.toFixed(2)}</span>
-                       </div>
-                                               <div className="col-span-2 md:col-span-3">
+                                                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+                        <div>
+                          <span className="text-gray-400">ISBN:</span>
+                          <span className="text-white ml-1">{book.isbn as string}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Category:</span>
+                          <span className="text-purple-400 ml-1">{categories.find(c => c.id === book.category_id)?.name as string || 'Uncategorized'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Condition:</span>
+                          <span className={cn(
+                            "ml-1 inline-flex px-1 py-0.5 text-xs font-semibold rounded",
+                            (book.condition as string) === "new" && "bg-green-500/20 text-green-400",
+                            (book.condition as string) === "like_new" && "bg-emerald-500/20 text-emerald-400",
+                            (book.condition as string) === "very_good" && "bg-blue-500/20 text-blue-400",
+                            (book.condition as string) === "good" && "bg-yellow-500/20 text-yellow-400",
+                            (book.condition as string) === "acceptable" && "bg-orange-500/20 text-orange-400",
+                            (book.condition as string) === "poor" && "bg-red-500/20 text-red-400"
+                          )}>
+                            {(book.condition as string)?.replace('_', ' ')?.charAt(0).toUpperCase() + (book.condition as string)?.replace('_', ' ')?.slice(1) || 'Unknown'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Status:</span>
+                          <span className={cn(
+                            "ml-1 inline-flex px-1 py-0.5 text-xs font-semibold rounded",
+                            (book.status as string) === "Listed" && "bg-blue-500/20 text-blue-400",
+                            (book.status as string) === "Sold" && "bg-green-500/20 text-green-400",
+                            (book.status as string) === "draft" && "bg-yellow-500/20 text-yellow-400"
+                          )}>
+                            {(book.status as string)?.charAt(0).toUpperCase() + (book.status as string)?.slice(1)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">List Price:</span>
+                          <span className="text-white ml-1">${(book.asking_price as number)?.toFixed(2)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">COGS:</span>
+                          <span className="text-white ml-1">${(book.purchase_price as number)?.toFixed(2)}</span>
+                        </div>
+                        <div className="col-span-2 md:col-span-4">
                           <span className="text-gray-400">Profit:</span>
                           <span className="text-emerald-400 font-semibold ml-1">${profit.toFixed(2)} ({profitPercentage.toFixed(1)}%)</span>
                         </div>
-                     </div>
+                      </div>
                    </div>
                  );
                })}
              </div>
 
-             {/* Desktop Table View - Hidden on mobile/tablet */}
-             <div className="hidden xl:block overflow-x-auto relative">
-               {/* Scroll indicator */}
-               <div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-gray-800/50 to-transparent pointer-events-none z-10"></div>
-               <table className="w-full min-w-[1200px]">
+                           {/* Desktop Table View - Hidden on mobile/tablet */}
+              <div className="hidden xl:block overflow-x-auto relative">
+                {/* Scroll indicator */}
+                <div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-gray-800/50 to-transparent pointer-events-none z-10"></div>
+                <table className="w-full min-w-[2000px]">
                 <thead className="bg-gray-700/30">
                   <tr>
                     <th
@@ -665,8 +1011,10 @@ export default function InventoryPage() {
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ISBN</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ISBN</th>
+                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Category</th>
+                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Condition</th>
+                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
                     <th
                       className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
                       onClick={() => handleSort('asking_price')}
@@ -712,21 +1060,39 @@ export default function InventoryPage() {
                 <tbody className="divide-y divide-gray-700/50">
                   {filteredBooks.map((book) => (
                     <tr key={book.id as string}>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-white">{book.title as string}</div>
-                        <div className="text-sm text-gray-400">{(book.authors as string[])?.join(', ')}</div>
-                      </td>
-                      <td className="px-6 py-4 text-gray-300">{book.isbn as string}</td>
-                      <td className="px-6 py-4">
-                        <span className={cn(
-                          "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
-                          (book.status as string) === "Listed" && "bg-blue-500/20 text-blue-400",
-                          (book.status as string) === "Sold" && "bg-green-500/20 text-green-400",
-                          (book.status as string) === "draft" && "bg-yellow-500/20 text-yellow-400"
-                        )}>
-                          {(book.status as string)?.charAt(0).toUpperCase() + (book.status as string)?.slice(1)}
-                        </span>
-                      </td>
+                                             <td className="px-6 py-4">
+                         <div className="text-sm font-medium text-white">{book.title as string}</div>
+                         <div className="text-sm text-gray-400">{(book.authors as string[])?.join(', ')}</div>
+                       </td>
+                       <td className="px-6 py-4 text-gray-300">{book.isbn as string}</td>
+                       <td className="px-6 py-4">
+                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-400">
+                           {categories.find(c => c.id === book.category_id)?.name as string || 'Uncategorized'}
+                         </span>
+                       </td>
+                       <td className="px-6 py-4">
+                         <span className={cn(
+                           "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                           (book.condition as string) === "new" && "bg-green-500/20 text-green-400",
+                           (book.condition as string) === "like_new" && "bg-emerald-500/20 text-emerald-400",
+                           (book.condition as string) === "very_good" && "bg-blue-500/20 text-blue-400",
+                           (book.condition as string) === "good" && "bg-yellow-500/20 text-yellow-400",
+                           (book.condition as string) === "acceptable" && "bg-orange-500/20 text-orange-400",
+                           (book.condition as string) === "poor" && "bg-red-500/20 text-red-400"
+                         )}>
+                           {(book.condition as string)?.replace('_', ' ')?.charAt(0).toUpperCase() + (book.condition as string)?.replace('_', ' ')?.slice(1) || 'Unknown'}
+                         </span>
+                       </td>
+                       <td className="px-6 py-4">
+                         <span className={cn(
+                           "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                           (book.status as string) === "Listed" && "bg-blue-500/20 text-blue-400",
+                           (book.status as string) === "Sold" && "bg-green-500/20 text-green-400",
+                           (book.status as string) === "draft" && "bg-yellow-500/20 text-yellow-400"
+                         )}>
+                           {(book.status as string)?.charAt(0).toUpperCase() + (book.status as string)?.slice(1)}
+                         </span>
+                       </td>
                                               <td className="px-6 py-4 text-white">${(book.asking_price as number)?.toFixed(2)}</td>
                         <td className="px-6 py-4 text-gray-300">${(book.purchase_price as number)?.toFixed(2)}</td>
                         <td className="px-6 py-4">

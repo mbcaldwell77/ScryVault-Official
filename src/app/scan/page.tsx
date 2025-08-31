@@ -22,7 +22,9 @@ interface ManualBookData {
   publishedDate?: string;
   pageCount?: number;
   description?: string;
-  categories?: string[];
+  category_id?: string;
+  condition?: string;
+  condition_notes?: string;
   purchasePrice?: number;
   askingPrice?: number;
 }
@@ -36,6 +38,7 @@ export default function ScanPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recentBooks, setRecentBooks] = useState<Record<string, unknown>[]>([]);
+  const [categories, setCategories] = useState<Record<string, unknown>[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showToastState, setShowToastState] = useState(false);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
@@ -48,7 +51,9 @@ export default function ScanPage() {
     publishedDate: undefined,
     pageCount: undefined,
     description: '',
-    categories: [],
+    category_id: undefined,
+    condition: undefined,
+    condition_notes: '',
     purchasePrice: undefined,
     askingPrice: undefined
   });
@@ -56,9 +61,10 @@ export default function ScanPage() {
   const { user } = useAuth()
   const isDemoMode = !user && typeof window !== 'undefined' && localStorage.getItem('scryvault_demo_mode') === 'true'
 
-  // Load recent books on component mount
+  // Load recent books and categories on component mount
   useEffect(() => {
     loadRecentBooks();
+    loadCategories();
   }, []);
 
   const loadRecentBooks = async () => {
@@ -78,6 +84,24 @@ export default function ScanPage() {
       setRecentBooks(data || []);
     } catch (error) {
       console.error('Error loading recent books:', error);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const { data, error } = await supabaseService
+        .from('categories')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error loading categories:', error);
+        return;
+      }
+
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error loading categories:', error);
     }
   };
 
@@ -121,7 +145,9 @@ export default function ScanPage() {
           publishedDate: undefined,
           pageCount: undefined,
           description: '',
-          categories: [],
+          category_id: undefined,
+          condition: undefined,
+          condition_notes: '',
           purchasePrice: undefined,
           askingPrice: undefined
         });
@@ -153,7 +179,9 @@ export default function ScanPage() {
           published_date: (bookDataToSave.publishedDate && bookDataToSave.publishedDate.trim() !== '') ? bookDataToSave.publishedDate : null,
           page_count: bookDataToSave.pageCount || null,
           description: bookDataToSave.description || null,
-          condition: 'good',
+          category_id: bookDataToSave.category_id || null,
+          condition: bookDataToSave.condition || 'good',
+          condition_notes: bookDataToSave.condition_notes || null,
           purchase_price: bookDataToSave.purchasePrice || null,
           asking_price: bookDataToSave.askingPrice || null,
           status: 'draft'
@@ -179,7 +207,9 @@ export default function ScanPage() {
         publishedDate: undefined,
         pageCount: undefined,
         description: '',
-        categories: [],
+        category_id: undefined,
+        condition: undefined,
+        condition_notes: '',
         purchasePrice: undefined,
         askingPrice: undefined
       });
@@ -230,7 +260,9 @@ export default function ScanPage() {
       publishedDate: undefined,
       pageCount: undefined,
       description: '',
-      categories: [],
+      category_id: undefined,
+      condition: undefined,
+      condition_notes: '',
       purchasePrice: undefined,
       askingPrice: undefined
     });
@@ -522,6 +554,56 @@ export default function ScanPage() {
                       placeholder="0.00"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Category
+                    </label>
+                    <select
+                      value={manualBookData.category_id || ''}
+                      onChange={(e) => setManualBookData({...manualBookData, category_id: e.target.value || undefined})}
+                      className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map((category) => (
+                        <option key={category.id as string} value={category.id as string}>
+                          {category.name as string}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Condition
+                    </label>
+                    <select
+                      value={manualBookData.condition || ''}
+                      onChange={(e) => setManualBookData({...manualBookData, condition: e.target.value || undefined})}
+                      className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Select condition</option>
+                      <option value="new">New</option>
+                      <option value="like_new">Like New</option>
+                      <option value="very_good">Very Good</option>
+                      <option value="good">Good</option>
+                      <option value="acceptable">Acceptable</option>
+                      <option value="poor">Poor</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Condition Notes
+                  </label>
+                  <textarea
+                    value={manualBookData.condition_notes || ''}
+                    onChange={(e) => setManualBookData({...manualBookData, condition_notes: e.target.value})}
+                    rows={2}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    placeholder="Any notes about the book's condition (optional)"
+                  />
                 </div>
 
                 <div className="mt-6">
