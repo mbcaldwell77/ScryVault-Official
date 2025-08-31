@@ -261,12 +261,12 @@ export default function InventoryPage() {
           status: 'listed',
           listed_at: new Date().toISOString()
         })
-        .eq('id', book.id)
+        .eq('id', bookData.id)
 
       // Refresh data
       await fetchData()
 
-      showToast(`"${book.title}" has been listed on eBay!`, 'success')
+      showToast(`"${bookData.title}" has been listed on eBay!`, 'success')
     } catch (error) {
       console.error('Error creating eBay listing:', error)
       showToast('Failed to create eBay listing. Please try again.', 'error')
