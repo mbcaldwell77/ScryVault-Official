@@ -164,11 +164,12 @@ export default function SettingsPage() {
                           onClick={() => {
                             const authUrl = EbayAPI.generateAuthUrl('/settings')
                             console.log('Auth URL:', authUrl)
-                            alert('Auth URL generated successfully! Check console.')
+                            console.log('🌐 Opening eBay OAuth page...')
+                            window.open(authUrl, '_blank')
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
                         >
-                          Test URL
+                          Test OAuth
                         </button>
                       </div>
                     )}

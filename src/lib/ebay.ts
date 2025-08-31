@@ -9,9 +9,13 @@ const EBAY_SANDBOX_URL = process.env.NEXT_PUBLIC_EBAY_SANDBOX_URL || 'https://ap
 const EBAY_REDIRECT_URI_DEV = process.env.NEXT_PUBLIC_EBAY_REDIRECT_URI_DEV!
 const EBAY_REDIRECT_URI_PROD = process.env.NEXT_PUBLIC_EBAY_REDIRECT_URI_PROD!
 
-// Use sandbox for development
-const EBAY_BASE_URL = EBAY_SANDBOX_URL
-const EBAY_REDIRECT_URI = EBAY_REDIRECT_URI_DEV
+// Use production for now (credentials provided are for production)
+const EBAY_BASE_URL = EBAY_PRODUCTION_URL
+
+// For OAuth requests, use the RuName instead of the actual URL
+// eBay will redirect to the actual URL associated with this RuName
+const EBAY_RU_NAME = 'ldern_Tomes-ldernTom-ScryVa-vgruzptqo'
+const EBAY_REDIRECT_URI = EBAY_RU_NAME
 
 // eBay API endpoints
 const ENDPOINTS = {
@@ -150,6 +154,7 @@ export class EbayAPI {
   // Store tokens securely
   private async storeTokens(tokens: EbayTokenResponse) {
     try {
+      console.log('💾 Storing eBay tokens...')
       // For demo purposes, use a fixed user ID
       const userId = '550e8400-e29b-41d4-a716-446655440000'
 
@@ -163,12 +168,13 @@ export class EbayAPI {
 
       // Store in localStorage for now (in production, use secure storage)
       localStorage.setItem(`ebay_tokens_${userId}`, JSON.stringify(tokenData))
+      console.log('✅ eBay tokens stored successfully')
 
       this.accessToken = tokens.access_token
       this.refreshToken = tokens.refresh_token
       this.tokenExpiresAt = expiresAt
     } catch (error) {
-      console.error('Error storing eBay tokens:', error)
+      console.error('❌ Error storing eBay tokens:', error)
       throw error
     }
   }
@@ -196,7 +202,8 @@ export class EbayAPI {
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: this.refreshToken,
-          scope: 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
+          scope: 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account',
+          redirect_uri: EBAY_RU_NAME  // Include redirect_uri for refresh token
         })
       })
 
@@ -258,38 +265,60 @@ export class EbayAPI {
 
   // Generate OAuth authorization URL
   static generateAuthUrl(state?: string): string {
+    console.log('🔧 Generating eBay OAuth URL:')
+    console.log('- Client ID:', EBAY_APP_ID)
+    console.log('- RuName (for OAuth request):', EBAY_REDIRECT_URI)
+    console.log('- Actual redirect URL (configured in eBay):', EBAY_REDIRECT_URI_DEV)
+    console.log('- Base URL:', EBAY_BASE_URL)
+    console.log('- Environment:', EBAY_BASE_URL.includes('sandbox') ? 'SANDBOX' : 'PRODUCTION')
+
+    // Match the exact parameter order from eBay developer site
     const params = new URLSearchParams({
       client_id: EBAY_APP_ID,
-      redirect_uri: EBAY_REDIRECT_URI,
       response_type: 'code',
-      scope: 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account',
+      redirect_uri: EBAY_REDIRECT_URI,
+      scope: 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account https://api.ebay.com/oauth/api_scope/sell.inventory.readonly https://api.ebay.com/oauth/api_scope/sell.account.readonly',
       ...(state && { state })
     })
 
-    return `${ENDPOINTS.AUTHORIZATION}?${params}`
+    const url = `${ENDPOINTS.AUTHORIZATION}?${params}`
+    console.log('- Final OAuth URL:', url)
+    console.log('ℹ️ eBay will redirect to:', EBAY_REDIRECT_URI_DEV)
+
+    return url
   }
 
   // Exchange authorization code for tokens
   async exchangeCodeForTokens(code: string): Promise<EbayTokenResponse> {
+    console.log('🔄 Starting token exchange...')
+    console.log('Code:', code)
+    console.log('RuName:', EBAY_RU_NAME)
+
     try {
       const response = await fetch(ENDPOINTS.TOKEN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${btoa(`${EBAY_APP_ID}:${EBAY_CERT_ID}`)}`
+          'Authorization': `Basic ${btoa(`${EBAY_APP_ID}:${process.env.EBAY_CERT_ID}`)}`
         },
         body: new URLSearchParams({
           grant_type: 'authorization_code',
           code: code,
-          redirect_uri: EBAY_REDIRECT_URI
+          redirect_uri: EBAY_RU_NAME  // Use the RuName for token exchange
         })
       })
 
+      console.log('Token exchange response status:', response.status)
+
       if (!response.ok) {
-        throw new Error(`Token exchange failed: ${response.status}`)
+        const errorText = await response.text()
+        console.error('Token exchange failed:', response.status, errorText)
+        throw new Error(`Token exchange failed: ${response.status} - ${errorText}`)
       }
 
       const tokens: EbayTokenResponse = await response.json()
+      console.log('✅ Token exchange successful!')
+
       await this.storeTokens(tokens)
       return tokens
     } catch (error) {
@@ -456,26 +485,49 @@ export class EbayAPI {
   // Test eBay API connection
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
+      console.log('Testing eBay API configuration...')
+      console.log('EBAY_APP_ID available:', !!EBAY_APP_ID)
+      console.log('EBAY_CERT_ID available:', !!process.env.EBAY_CERT_ID) // Server-side only
+      console.log('EBAY_REDIRECT_URI (RuName):', EBAY_REDIRECT_URI)
+      console.log('EBAY_REDIRECT_URI_DEV (actual URL):', EBAY_REDIRECT_URI_DEV)
+
       // Verify environment variables are available
       if (!EBAY_APP_ID) {
-        throw new Error('EBAY_APP_ID is not configured')
+        throw new Error('NEXT_PUBLIC_EBAY_APP_ID environment variable is not configured. Please add it to your .env.local file.')
       }
-      if (!EBAY_REDIRECT_URI) {
-        throw new Error('EBAY_REDIRECT_URI is not configured')
+      if (!EBAY_REDIRECT_URI_DEV) {
+        throw new Error('NEXT_PUBLIC_EBAY_REDIRECT_URI_DEV environment variable is not configured. Please add it to your .env.local file.')
+      }
+
+      // Check if we're using production URLs with production credentials
+      const isProduction = EBAY_BASE_URL.includes('api.ebay.com') && !EBAY_BASE_URL.includes('sandbox')
+      const isProductionAppId = EBAY_APP_ID.includes('PRD-')
+
+      console.log('Using production URLs:', isProduction)
+      console.log('Using production App ID:', isProductionAppId)
+
+      if (isProduction !== isProductionAppId) {
+        console.warn('⚠️ Environment mismatch! Production App ID with sandbox URLs or vice versa.')
       }
 
       // Try to generate auth URL to test configuration
       const authUrl = EbayAPI.generateAuthUrl('/test')
+      console.log('Generated auth URL:', authUrl)
+
+      // Check if the URL looks valid
+      if (!authUrl.includes('client_id=') || !authUrl.includes('redirect_uri=')) {
+        throw new Error('Generated OAuth URL appears to be malformed')
+      }
 
       return {
         success: true,
-        message: 'eBay API configuration looks good!'
+        message: 'eBay API configuration looks good! Environment variables are properly loaded.'
       }
     } catch (error) {
       console.error('eBay API test failed:', error)
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error occurred during API test'
       }
     }
   }

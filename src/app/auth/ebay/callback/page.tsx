@@ -13,23 +13,34 @@ export default function EbayCallbackPage() {
 
   useEffect(() => {
     const handleCallback = async () => {
+      console.log('🔄 eBay OAuth callback triggered')
+      console.log('URL:', window.location.href)
+      console.log('Search params:', Object.fromEntries(searchParams.entries()))
+
       try {
         const code = searchParams.get('code')
         const error = searchParams.get('error')
         const state = searchParams.get('state')
 
+        console.log('Authorization code:', code)
+        console.log('Error:', error)
+        console.log('State:', state)
+
         if (error) {
           setStatus('error')
           setMessage(`Authentication failed: ${error}`)
+          console.error('OAuth error:', error)
           return
         }
 
         if (!code) {
           setStatus('error')
           setMessage('No authorization code received')
+          console.error('No authorization code in callback')
           return
         }
 
+        console.log('🔄 Exchanging authorization code for tokens...')
         // Exchange the authorization code for tokens
         await ebayAPI.exchangeCodeForTokens(code)
 
