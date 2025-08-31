@@ -31,7 +31,7 @@ export default function SettingsPage() {
       setEbayAuthLoading(true)
       // Generate OAuth URL manually since we can't access the static method
       const clientId = process.env.NEXT_PUBLIC_EBAY_APP_ID!
-      const ruName = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
+             const ruName = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
       const scope = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
       const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scope)}&state=/settings`
       window.location.href = authUrl

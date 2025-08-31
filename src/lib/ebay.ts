@@ -2,17 +2,29 @@ import { supabase } from './supabase'
 
 // eBay API Configuration
 const EBAY_APP_ID = process.env.NEXT_PUBLIC_EBAY_APP_ID!
+
+// Validate the App ID format
+if (!EBAY_APP_ID || !EBAY_APP_ID.includes('PRD-')) {
+  console.error('❌ Invalid eBay App ID format. Expected format: xxx-PRD-xxxxx-xxxxx')
+}
 const EBAY_CERT_ID = process.env.EBAY_CERT_ID!
 const EBAY_PRODUCTION_URL = process.env.NEXT_PUBLIC_EBAY_PRODUCTION_URL || 'https://api.ebay.com'
 const EBAY_REDIRECT_URI_DEV = process.env.NEXT_PUBLIC_EBAY_REDIRECT_URI_DEV!
 const EBAY_REDIRECT_URI_PROD = process.env.NEXT_PUBLIC_EBAY_REDIRECT_URI_PROD!
 
-// Use production for now (credentials provided are for production)
-const EBAY_BASE_URL = EBAY_PRODUCTION_URL
-
 // For OAuth requests, use the RuName instead of the actual URL
 // eBay will redirect to the actual URL associated with this RuName
 const EBAY_RU_NAME = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
+
+// Use production for now (credentials provided are for production)
+const EBAY_BASE_URL = EBAY_PRODUCTION_URL
+
+// Debug: Log the configuration
+console.log('🔧 eBay Configuration:')
+console.log('- App ID:', EBAY_APP_ID)
+console.log('- Base URL:', EBAY_BASE_URL)
+console.log('- RuName:', EBAY_RU_NAME)
+console.log('- Environment:', EBAY_BASE_URL.includes('sandbox') ? 'SANDBOX' : 'PRODUCTION')
 
 // Always use production redirect URI for OAuth
 const EBAY_REDIRECT_URI = EBAY_REDIRECT_URI_PROD
