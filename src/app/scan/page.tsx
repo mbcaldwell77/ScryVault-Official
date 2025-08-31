@@ -7,6 +7,9 @@ import Image from "next/image";
 import { lookupBookByISBN, validateISBN, BookData, supabaseService } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
+import Sidebar from "../components/Sidebar";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 
 // Note: Sidebar component removed in favor of Header for authentication
 
@@ -34,20 +37,24 @@ export default function ScanPage() {
   const [error, setError] = useState<string | null>(null);
   const [recentBooks, setRecentBooks] = useState<Record<string, unknown>[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [showToast, setShowToast] = useState(false);
+  const [showToastState, setShowToastState] = useState(false);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [manualBookData, setManualBookData] = useState<ManualBookData>({
     title: '',
     authors: [],
     isbn: '',
     isbn13: '',
     publisher: '',
-    publishedDate: '',
+    publishedDate: undefined,
     pageCount: undefined,
     description: '',
     categories: [],
     purchasePrice: undefined,
     askingPrice: undefined
   });
+
+  const { user } = useAuth()
+  const isDemoMode = !user && typeof window !== 'undefined' && localStorage.getItem('scryvault_demo_mode') === 'true'
 
   // Load recent books on component mount
   useEffect(() => {
@@ -111,7 +118,7 @@ export default function ScanPage() {
           isbn: isbnInput,
           isbn13: '',
           publisher: '',
-          publishedDate: '',
+          publishedDate: undefined,
           pageCount: undefined,
           description: '',
           categories: [],
@@ -143,7 +150,7 @@ export default function ScanPage() {
           isbn: bookDataToSave.isbn,
           isbn13: bookDataToSave.isbn13 || null,
           publisher: bookDataToSave.publisher || null,
-          published_date: bookDataToSave.publishedDate ?? null,
+          published_date: (bookDataToSave.publishedDate && bookDataToSave.publishedDate.trim() !== '') ? bookDataToSave.publishedDate : null,
           page_count: bookDataToSave.pageCount || null,
           description: bookDataToSave.description || null,
           condition: 'good',
@@ -169,7 +176,7 @@ export default function ScanPage() {
         isbn: '',
         isbn13: '',
         publisher: '',
-        publishedDate: '',
+        publishedDate: undefined,
         pageCount: undefined,
         description: '',
         categories: [],
@@ -178,7 +185,7 @@ export default function ScanPage() {
       });
 
       await loadRecentBooks();
-      showSuccessToast(`Book "${bookDataToSave.title}" has been added to your inventory!`);
+      showToast(`Book "${bookDataToSave.title}" has been added to your inventory!`, 'success');
 
     } catch (error) {
       console.error('Error saving book:', error);
@@ -188,12 +195,13 @@ export default function ScanPage() {
     }
   };
 
-  const showSuccessToast = (message: string) => {
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToastMessage(message);
-    setShowToast(true);
+    setToastType(type);
+    setShowToastState(true);
     // Auto-dismiss after 4 seconds
     setTimeout(() => {
-      setShowToast(false);
+      setShowToastState(false);
       setToastMessage(null);
     }, 4000);
   };
@@ -219,7 +227,7 @@ export default function ScanPage() {
       isbn: '',
       isbn13: '',
       publisher: '',
-      publishedDate: '',
+      publishedDate: undefined,
       pageCount: undefined,
       description: '',
       categories: [],
@@ -230,7 +238,8 @@ export default function ScanPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-900">
+      <Sidebar />
+      <div className="min-h-screen bg-gray-900 pl-64">
         <Header />
         <div className="max-w-7xl mx-auto p-6">
         {/* Page Header */}
@@ -247,19 +256,21 @@ export default function ScanPage() {
         <div className="p-6">
           <div className="max-w-4xl mx-auto">
             {/* Security Warning */}
-            <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-sm">⚠️</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-amber-400 font-medium">Demo Mode - Data Will Persist</p>
-                  <p className="text-amber-300 text-sm">
-                    RLS disabled for demo use. Your books will save and persist, but add authentication before production use.
-                  </p>
+            {isDemoMode && (
+              <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-sm">⚠️</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-amber-400 font-medium">Demo Mode - Data Will Persist</p>
+                    <p className="text-amber-300 text-sm">
+                      RLS disabled for demo use. Your books will save and persist, but add authentication before production use.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Header */}
             <div className="text-center mb-12">
@@ -592,30 +603,61 @@ export default function ScanPage() {
         </div>
       </div>
 
-      {/* Success Toast */}
-      {showToast && toastMessage && (
+      {/* Toast Notification */}
+      {showToastState && toastMessage && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 duration-300">
-          <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 rounded-xl p-4 shadow-xl backdrop-blur-sm">
+          <div className={cn(
+            "rounded-xl p-4 shadow-xl backdrop-blur-sm border",
+            toastType === 'success'
+              ? "bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-emerald-500/30"
+              : "bg-gradient-to-r from-red-500/20 to-orange-500/20 border-red-500/30"
+          )}>
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4 text-white" />
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center",
+                  toastType === 'success' ? "bg-emerald-500" : "bg-red-500"
+                )}>
+                  {toastType === 'success' ? (
+                    <Check className="w-4 h-4 text-white" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-white" />
+                  )}
                 </div>
               </div>
               <div className="flex-1">
-                <p className="text-emerald-400 font-medium text-sm">Success!</p>
-                <p className="text-emerald-300 text-sm mt-1">{toastMessage}</p>
+                <p className={cn(
+                  "font-medium text-sm",
+                  toastType === 'success' ? "text-emerald-400" : "text-red-400"
+                )}>
+                  {toastType === 'success' ? 'Success!' : 'Error!'}
+                </p>
+                <p className={cn(
+                  "text-sm mt-1",
+                  toastType === 'success' ? "text-emerald-300" : "text-red-300"
+                )}>
+                  {toastMessage}
+                </p>
               </div>
               <button
-                onClick={() => setShowToast(false)}
-                className="text-emerald-400 hover:text-white transition-colors"
+                onClick={() => setShowToastState(false)}
+                className={cn(
+                  "hover:text-white transition-colors",
+                  toastType === 'success' ? "text-emerald-400" : "text-red-400"
+                )}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             {/* Progress bar */}
-            <div className="mt-3 h-1 bg-emerald-500/20 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full animate-pulse"></div>
+            <div className={cn(
+              "mt-3 h-1 rounded-full overflow-hidden",
+              toastType === 'success' ? "bg-emerald-500/20" : "bg-red-500/20"
+            )}>
+              <div className={cn(
+                "h-full rounded-full animate-pulse",
+                toastType === 'success' ? "bg-emerald-500" : "bg-red-500"
+              )}></div>
             </div>
           </div>
         </div>

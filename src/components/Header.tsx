@@ -3,9 +3,11 @@
 import { useAuth } from '@/lib/auth-context'
 import { LogOut, User } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const { user, signOut } = useAuth()
+  const router = useRouter()
 
   const handleSignOut = async () => {
     try {
@@ -16,10 +18,15 @@ export default function Header() {
     }
   }
 
-  const isDemoMode = localStorage.getItem('scryvault_demo_mode') === 'true'
+  const handleExitDemo = () => {
+    localStorage.removeItem('scryvault_demo_mode')
+    router.push('/')
+  }
+
+  const isDemoMode = !user && typeof window !== 'undefined' && localStorage.getItem('scryvault_demo_mode') === 'true'
 
   return (
-    <header className="bg-gray-800/50 border-b border-gray-700/50 px-6 py-4">
+    <header className="bg-gray-800/50 border-b border-gray-700/50 px-6 py-4 ml-64">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link href="/" className="text-xl font-bold text-white">
@@ -56,7 +63,7 @@ export default function Header() {
                 Create Account
               </Link>
               <button
-                onClick={handleSignOut}
+                onClick={handleExitDemo}
                 className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg transition-colors"
               >
                 <LogOut className="w-4 h-4" />

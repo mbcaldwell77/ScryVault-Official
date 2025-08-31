@@ -13,6 +13,7 @@ function Sidebar() {
     { name: 'Scan Books', href: '/scan', icon: Camera },
     { name: 'Inventory', href: '/inventory', icon: Package },
     { name: 'Analytics', href: '/analytics', icon: TrendingUp },
+    { name: 'Settings', href: '/settings', icon: User },
   ];
 
   return (
@@ -66,8 +67,18 @@ function Sidebar() {
               <User className="w-4 h-4 text-gray-300" />
             </div>
             <div>
-              <p className="text-sm font-medium text-white">John Doe</p>
-              <p className="text-xs text-gray-400">Premium Plan</p>
+              <p className="text-sm font-medium text-white">
+                {typeof window !== 'undefined' && localStorage.getItem('scryvault_demo_mode') === 'true'
+                  ? 'Demo User'
+                  : 'ScryVault User'
+                }
+              </p>
+              <p className="text-xs text-gray-400">
+                {typeof window !== 'undefined' && localStorage.getItem('scryvault_demo_mode') === 'true'
+                  ? 'Demo Mode'
+                  : 'Active User'
+                }
+              </p>
             </div>
           </div>
         </div>

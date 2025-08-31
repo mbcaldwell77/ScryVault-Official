@@ -1,12 +1,15 @@
 import { BookOpen, Package, TrendingUp, Camera, Settings } from "lucide-react";
 import Link from "next/link";
 import Sidebar from "../components/Sidebar";
+import AuthGuard from "@/components/AuthGuard";
+import Header from "@/components/Header";
 
 export default function Dashboard() {
   return (
-    <>
+    <AuthGuard>
       <Sidebar />
-      <div className="pl-64">
+      <div className="min-h-screen bg-gray-900 pl-64">
+        <Header />
         {/* Page Header */}
         <div className="p-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
@@ -133,6 +136,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </>
+    </AuthGuard>
   );
 }

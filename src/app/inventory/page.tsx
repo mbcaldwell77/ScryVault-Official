@@ -1,11 +1,13 @@
 "use client";
 
-import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X } from "lucide-react";
+import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X, AlertCircle, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
+import Sidebar from "../components/Sidebar";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 // Note: Sidebar component removed in favor of Header for authentication
 
@@ -22,8 +24,14 @@ export default function InventoryPage() {
   const [selectedBook, setSelectedBook] = useState<Record<string, unknown> | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState<Record<string, unknown> | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [showToast, setShowToast] = useState(false);
+  const [showToastState, setShowToastState] = useState(false);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  const { user } = useAuth()
+  const isDemoMode = !user && typeof window !== 'undefined' && localStorage.getItem('scryvault_demo_mode') === 'true'
 
   // Calculate real metrics from book data
   const calculateMetrics = (bookList: Record<string, unknown>[]) => {
@@ -94,12 +102,13 @@ export default function InventoryPage() {
     }
   };
 
-  const showSuccessToast = (message: string) => {
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToastMessage(message);
-    setShowToast(true);
+    setToastType(type);
+    setShowToastState(true);
     // Auto-dismiss after 4 seconds
     setTimeout(() => {
-      setShowToast(false);
+      setShowToastState(false);
       setToastMessage(null);
     }, 4000);
   };
@@ -115,34 +124,44 @@ export default function InventoryPage() {
     setShowEditModal(true);
   };
 
-  const handleDeleteBook = async (book: Record<string, unknown>) => {
-    if (window.confirm(`Are you sure you want to delete "${book.title as string}"? This action cannot be undone.`)) {
-      try {
-        const { error } = await supabase
-          .from('books')
-          .delete()
-          .eq('id', book.id);
+  const handleDeleteBook = (book: Record<string, unknown>) => {
+    setBookToDelete(book);
+    setShowDeleteModal(true);
+  };
 
-        if (error) {
-          console.error('Error deleting book:', error);
-          alert('Failed to delete book. Please try again.');
-          return;
-        }
+  const confirmDelete = async () => {
+    if (!bookToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from('books')
+        .delete()
+        .eq('id', bookToDelete.id);
 
-        // Refresh data after deletion
-        await fetchData();
-        showSuccessToast(`"${book.title as string}" has been deleted from your inventory.`);
-      } catch (err) {
-        console.error('Error deleting book:', err);
-        alert('An unexpected error occurred while deleting the book.');
+      if (error) {
+        console.error('Error deleting book:', error);
+        showToast('Failed to delete book. Please try again.', 'error');
+        return;
       }
+
+      // Refresh data after deletion
+      await fetchData();
+      showToast(`"${bookToDelete.title as string}" has been deleted from your inventory.`, 'success');
+    } catch (err) {
+      console.error('Error deleting book:', err);
+      showToast('An unexpected error occurred while deleting the book.', 'error');
+    } finally {
+      setShowDeleteModal(false);
+      setBookToDelete(null);
     }
   };
 
   const closeModals = () => {
     setShowViewModal(false);
     setShowEditModal(false);
+    setShowDeleteModal(false);
     setSelectedBook(null);
+    setBookToDelete(null);
   };
 
   useEffect(() => {
@@ -328,7 +347,7 @@ export default function InventoryPage() {
       // Refresh data after adding books
       await fetchData();
 
-      alert('Sample books added successfully! 🎉');
+      showToast('Sample books added successfully! 🎉', 'success');
     } catch (err: unknown) {
       console.error('Error adding sample books:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -338,7 +357,8 @@ export default function InventoryPage() {
   };
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gray-900">
+      <Sidebar />
+      <div className="min-h-screen bg-gray-900 pl-64">
         <Header />
         {/* Page Header */}
         <div className="p-6 border-b border-gray-700/50">
@@ -357,19 +377,21 @@ export default function InventoryPage() {
 
         {/* Database Connection Status */}
         <div className="p-6 border-b border-gray-700/50">
-          <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs">⚠️</span>
-              </div>
-              <div className="flex-1">
-                <p className="text-amber-400 font-medium text-sm">Demo Mode - Data Persistence Fixed</p>
-                <p className="text-amber-300 text-xs mt-1">
-                  RLS disabled for demo use. Your data will persist, but add authentication before production/multi-user use.
-                </p>
+          {isDemoMode && (
+            <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs">⚠️</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-amber-400 font-medium text-sm">Demo Mode - Data Persistence Fixed</p>
+                  <p className="text-amber-300 text-xs mt-1">
+                    RLS disabled for demo use. Your data will persist, but add authentication before production/multi-user use.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
           <div className="bg-gray-800/30 rounded-lg p-4">
             {loading ? (
               <div className="flex items-center space-x-2">
@@ -778,30 +800,110 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Success Toast */}
-      {showToast && toastMessage && (
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && bookToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <h2 className="text-xl font-semibold text-white">Delete Book</h2>
+              <button
+                onClick={closeModals}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-medium">Are you sure?</p>
+                  <p className="text-gray-400 text-sm">
+                    This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <div className="bg-gray-700/50 rounded-lg p-4 mb-6">
+                <p className="text-gray-300 text-sm">
+                  <span className="font-medium text-white">&ldquo;{bookToDelete.title as string}&rdquo;</span> will be permanently deleted from your inventory.
+                </p>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeModals}
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Delete Book
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {showToastState && toastMessage && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 duration-300">
-          <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 rounded-xl p-4 shadow-xl backdrop-blur-sm">
+          <div className={cn(
+            "rounded-xl p-4 shadow-xl backdrop-blur-sm border",
+            toastType === 'success'
+              ? "bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-emerald-500/30"
+              : "bg-gradient-to-r from-red-500/20 to-orange-500/20 border-red-500/30"
+          )}>
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4 text-white" />
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center",
+                  toastType === 'success' ? "bg-emerald-500" : "bg-red-500"
+                )}>
+                  {toastType === 'success' ? (
+                    <Check className="w-4 h-4 text-white" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-white" />
+                  )}
                 </div>
               </div>
               <div className="flex-1">
-                <p className="text-emerald-400 font-medium text-sm">Success!</p>
-                <p className="text-emerald-300 text-sm mt-1">{toastMessage}</p>
+                <p className={cn(
+                  "font-medium text-sm",
+                  toastType === 'success' ? "text-emerald-400" : "text-red-400"
+                )}>
+                  {toastType === 'success' ? 'Success!' : 'Error!'}
+                </p>
+                <p className={cn(
+                  "text-sm mt-1",
+                  toastType === 'success' ? "text-emerald-300" : "text-red-300"
+                )}>
+                  {toastMessage}
+                </p>
               </div>
               <button
-                onClick={() => setShowToast(false)}
-                className="text-emerald-400 hover:text-white transition-colors"
+                onClick={() => setShowToastState(false)}
+                className={cn(
+                  "hover:text-white transition-colors",
+                  toastType === 'success' ? "text-emerald-400" : "text-red-400"
+                )}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             {/* Progress bar */}
-            <div className="mt-3 h-1 bg-emerald-500/20 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full animate-pulse"></div>
+            <div className={cn(
+              "mt-3 h-1 rounded-full overflow-hidden",
+              toastType === 'success' ? "bg-emerald-500/20" : "bg-red-500/20"
+            )}>
+              <div className={cn(
+                "h-full rounded-full animate-pulse",
+                toastType === 'success' ? "bg-emerald-500" : "bg-red-500"
+              )}></div>
             </div>
           </div>
         </div>
