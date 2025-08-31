@@ -1,5 +1,5 @@
 declare module 'quagga' {
-  interface QuaggaConfig {
+  export interface QuaggaConfig {
     inputStream: {
       name: string;
       type: string;
@@ -23,13 +23,13 @@ declare module 'quagga' {
     locate: boolean;
   }
 
-  interface QuaggaResult {
+  export interface QuaggaResult {
     codeResult: {
       code: string;
     };
   }
 
-  interface QuaggaProcessedResult {
+  export interface QuaggaProcessedResult {
     boxes?: unknown[];
     box?: unknown;
     codeResult?: {
@@ -50,7 +50,7 @@ declare module 'quagga' {
       };
     };
     ImageDebug: {
-      drawPath(path: unknown, options: { x: number | string; y: number | string }, context: CanvasRenderingContext2D, options2: { color: string; lineWidth: number }): void;
+      drawPath(path: unknown, opts: { x: number | string; y: number | string }, ctx: CanvasRenderingContext2D, style: { color: string; lineWidth: number }): void;
     };
   }
 

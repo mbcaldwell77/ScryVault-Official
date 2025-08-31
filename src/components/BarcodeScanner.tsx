@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X, Camera, AlertCircle } from 'lucide-react';
+import type { QuaggaResult, QuaggaProcessedResult } from 'quagga';
 
 interface BarcodeScannerProps {
   onScan: (isbn: string) => void;
