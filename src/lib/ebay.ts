@@ -286,24 +286,32 @@ export class EbayAPI {
   // Exchange authorization code for tokens
   async exchangeCodeForTokens(code: string): Promise<EbayTokenResponse> {
     console.log('🔄 Starting token exchange...')
-    console.log('Code:', code)
+    console.log('Code length:', code.length)
+    console.log('Code preview:', code.substring(0, 20) + '...')
     console.log('RuName:', EBAY_RU_NAME)
+    console.log('App ID:', EBAY_APP_ID)
+    console.log('Cert ID available:', !!EBAY_CERT_ID)
 
     try {
+      const requestBody = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: EBAY_RU_NAME  // Use the RuName for token exchange
+      })
+
+      console.log('Request body:', requestBody.toString())
+
       const response = await fetch(ENDPOINTS.TOKEN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Authorization': `Basic ${btoa(`${EBAY_APP_ID}:${EBAY_CERT_ID}`)}`
         },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          code: code,
-          redirect_uri: EBAY_RU_NAME  // Use the RuName for token exchange
-        })
+        body: requestBody
       })
 
       console.log('Token exchange response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -313,6 +321,11 @@ export class EbayAPI {
 
       const tokens: EbayTokenResponse = await response.json()
       console.log('✅ Token exchange successful!')
+      console.log('Tokens received:', { 
+        access_token_length: tokens.access_token?.length,
+        expires_in: tokens.expires_in,
+        token_type: tokens.token_type
+      })
 
       await this.storeTokens(tokens)
       return tokens

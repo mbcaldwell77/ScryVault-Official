@@ -41,15 +41,20 @@ export default function EbayCallbackPage() {
         }
 
         console.log('🔄 Exchanging authorization code for tokens...')
+        console.log('Code length:', code.length)
+        console.log('Code preview:', code.substring(0, 20) + '...')
+        
         // Exchange the authorization code for tokens
-        await ebayAPI.exchangeCodeForTokens(code)
+        const tokens = await ebayAPI.exchangeCodeForTokens(code)
+        console.log('✅ Token exchange successful:', tokens)
 
         setStatus('success')
         setMessage('Successfully connected to eBay!')
 
         // Redirect back to the page that initiated the auth (or dashboard)
         setTimeout(() => {
-          const returnUrl = state || '/dashboard'
+          const returnUrl = state || '/settings'
+          console.log('Redirecting to:', returnUrl)
           router.push(returnUrl)
         }, 2000)
 
