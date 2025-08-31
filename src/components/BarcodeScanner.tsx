@@ -1,12 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { X, Camera, AlertCircle, Check } from 'lucide-react';
+import { X, Camera, AlertCircle } from 'lucide-react';
 
 interface BarcodeScannerProps {
   onScan: (isbn: string) => void;
   onClose: () => void;
   isOpen: boolean;
+}
+
+interface QuaggaResult {
+  codeResult: {
+    code: string;
+  };
+}
+
+interface QuaggaProcessedResult {
+  boxes?: unknown[];
+  box?: unknown;
+  codeResult?: {
+    code: string;
+  };
+  line?: unknown;
 }
 
 export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScannerProps) {
@@ -54,18 +69,18 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
             ]
           },
           locate: true
-        }, (err: any) => {
-          if (err) {
-            console.error('Quagga initialization error:', err);
-            setError('Failed to initialize camera. Please check camera permissions.');
-            return;
-          }
-          setIsInitialized(true);
-          Quagga.start();
-        });
+                 }, (err: unknown) => {
+           if (err) {
+             console.error('Quagga initialization error:', err);
+             setError('Failed to initialize camera. Please check camera permissions.');
+             return;
+           }
+           setIsInitialized(true);
+           Quagga.start();
+         });
 
-        Quagga.onDetected((result: any) => {
-          const code = result.codeResult.code;
+                 Quagga.onDetected((result: QuaggaResult) => {
+           const code = result.codeResult.code;
           
           // Prevent duplicate scans
           if (code === lastScanned) return;
@@ -82,27 +97,27 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
           }
         });
 
-        Quagga.onProcessed((result: any) => {
-          const drawingCanvas = Quagga.canvas.dom.overlay;
-          const drawingCtx = drawingCanvas.getContext('2d');
-          
-          if (result) {
-            if (result.boxes) {
-              drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width") || "0"), parseInt(drawingCanvas.getAttribute("height") || "0"));
-              result.boxes.filter((box: any) => box !== result.box).forEach((box: any) => {
-                Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
-              });
-            }
+                 Quagga.onProcessed((result: QuaggaProcessedResult) => {
+           const drawingCanvas = Quagga.canvas.dom.overlay;
+           const drawingCtx = drawingCanvas.getContext('2d');
+           
+           if (result) {
+             if (result.boxes) {
+               drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width") || "0"), parseInt(drawingCanvas.getAttribute("height") || "0"));
+               result.boxes.filter((box: unknown) => box !== result.box).forEach((box: unknown) => {
+                 Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
+               });
+             }
 
-            if (result.box) {
-              Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "blue", lineWidth: 2 });
-            }
+             if (result.box) {
+               Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "blue", lineWidth: 2 });
+             }
 
-            if (result.codeResult && result.codeResult.code) {
-              Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
-            }
-          }
-        });
+             if (result.codeResult && result.codeResult.code) {
+               Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+             }
+           }
+         });
 
         return () => {
           Quagga.stop();
