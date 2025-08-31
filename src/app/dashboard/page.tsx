@@ -11,7 +11,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gray-900 lg:pl-64">
         <Header />
         {/* Page Header */}
-        <div className="p-6 pt-20 lg:pt-6 border-b border-gray-700/50">
+        <div className="p-4 lg:p-6 pt-16 lg:pt-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Dashboard</h2>
@@ -21,7 +21,7 @@ export default function Dashboard() {
         </div>
 
         {/* Dashboard Content */}
-        <div className="p-6">
+        <div className="p-4 lg:p-6">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">

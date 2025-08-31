@@ -273,9 +273,9 @@ export default function ScanPage() {
       <Sidebar />
       <div className="min-h-screen bg-gray-900 lg:pl-64">
         <Header />
-        <div className="max-w-7xl mx-auto p-6 pt-20 lg:pt-6">
-        {/* Page Header */}
-        <div className="p-6 border-b border-gray-700/50">
+        <div className="max-w-7xl mx-auto p-4 lg:p-6 pt-16 lg:pt-6">
+                  {/* Page Header */}
+          <div className="p-4 lg:p-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Scan Books</h2>
@@ -284,8 +284,8 @@ export default function ScanPage() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="p-6">
+                  {/* Main Content */}
+          <div className="p-4 lg:p-6">
           <div className="max-w-4xl mx-auto">
             {/* Security Warning */}
             {isDemoMode && (
@@ -339,8 +339,8 @@ export default function ScanPage() {
             </div>
 
             {/* ISBN Input Section */}
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-8 mb-8">
-              <div className="flex flex-col md:flex-row gap-4">
+                          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-8 mb-6 lg:mb-8">
+                              <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Enter ISBN Number
@@ -364,7 +364,7 @@ export default function ScanPage() {
                   <button
                     onClick={handleISBNLookup}
                     disabled={isLoading}
-                    className="w-full md:w-auto bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full lg:w-auto bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 lg:px-8 py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isLoading ? (
                       <>
@@ -384,7 +384,7 @@ export default function ScanPage() {
 
             {/* Book Preview */}
             {showPreview && bookData && (
-              <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-8 mb-8">
+              <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-8 mb-6 lg:mb-8">
                 <div className="flex items-start justify-between mb-6">
                   <h3 className="text-2xl font-semibold text-white">Book Found!</h3>
                   <button
@@ -435,11 +435,11 @@ export default function ScanPage() {
                       </p>
                     )}
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                       <button
                         onClick={() => handleSaveBook({...bookData, purchasePrice: undefined, askingPrice: undefined})}
                         disabled={isLoading}
-                        className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                        className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-4 lg:px-6 py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                       >
                         <Check className="w-4 h-4 mr-2" />
                         Add to Inventory
@@ -449,7 +449,7 @@ export default function ScanPage() {
                           setShowPreview(false);
                           setShowManualForm(true);
                         }}
-                        className="bg-gray-700 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-600 transition-all duration-200"
+                        className="bg-gray-700 text-white px-4 lg:px-6 py-3 rounded-lg font-medium hover:bg-gray-600 transition-all duration-200"
                       >
                         Edit Details
                       </button>
@@ -461,7 +461,7 @@ export default function ScanPage() {
 
             {/* Manual Entry Form */}
             {showManualForm && (
-              <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-8 mb-8">
+              <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-8 mb-6 lg:mb-8">
                 <div className="flex items-start justify-between mb-6">
                   <h3 className="text-2xl font-semibold text-white">
                     {bookData ? 'Edit Book Details' : 'Manual Entry'}
@@ -474,7 +474,7 @@ export default function ScanPage() {
                   </button>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Title *
@@ -648,7 +648,7 @@ export default function ScanPage() {
             )}
 
             {/* Recent Scans */}
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-8">
+                          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-8">
               <h3 className="text-2xl font-semibold text-white mb-6">Recent Additions</h3>
               {recentBooks.length > 0 ? (
                 <div className="space-y-4">

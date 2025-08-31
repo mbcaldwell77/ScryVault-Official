@@ -510,8 +510,8 @@ export default function InventoryPage() {
       <Sidebar />
       <div className="min-h-screen bg-gray-900 lg:pl-64">
         <Header />
-                  {/* Page Header */}
-          <div className="p-6 pt-20 lg:pt-6 border-b border-gray-700/50">
+                                     {/* Page Header */}
+           <div className="p-4 lg:p-6 pt-16 lg:pt-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Inventory</h2>
@@ -568,8 +568,8 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="p-6">
+                  {/* Main Content */}
+          <div className="p-4 lg:p-6">
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
@@ -685,8 +685,8 @@ export default function InventoryPage() {
            </div>
          )}
 
-                                   {/* Search and Filters - Moved above inventory */}
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 mb-6">
+                                              {/* Search and Filters - Moved above inventory */}
+           <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
               <div className="flex-1 max-w-md">
                 <div className="relative">
@@ -725,7 +725,7 @@ export default function InventoryPage() {
             {/* Advanced Filters Section */}
             {showAdvancedFilters && (
               <div className="mt-6 pt-6 border-t border-gray-700/50">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                   {/* Status Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Status</label>
@@ -902,19 +902,19 @@ export default function InventoryPage() {
                 )}
               </div>
                          {/* Mobile/Tablet Card View - Hidden on desktop */}
-             <div className="lg:hidden space-y-4 p-6">
+             <div className="lg:hidden space-y-4 p-4 lg:p-6">
                {filteredBooks.map((book) => {
                  const profit = ((book.asking_price as number) || 0) - ((book.purchase_price as number) || 0);
                  const profitPercentage = ((book.asking_price as number) || 0) > 0 ? (profit / ((book.asking_price as number) || 0)) * 100 : 0;
                  
                  return (
                    <div key={book.id as string} className="bg-gray-700/30 border border-gray-600/30 rounded-xl p-4">
-                     <div className="flex items-start justify-between mb-3">
+                     <div className="flex items-start justify-between mb-3 gap-2">
                        <div className="flex-1">
                          <h4 className="font-medium text-white text-sm">{book.title as string}</h4>
                          <p className="text-gray-400 text-xs">{(book.authors as string[])?.join(', ')}</p>
                        </div>
-                                               <div className="flex space-x-1 sm:space-x-2 ml-2 sm:ml-3">
+                                               <div className="flex space-x-1 sm:space-x-2 ml-2 sm:ml-3 flex-shrink-0">
                          <button
                            onClick={() => handleViewBook(book)}
                            className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
@@ -939,7 +939,7 @@ export default function InventoryPage() {
                        </div>
                      </div>
                      
-                                                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+                                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div>
                           <span className="text-gray-400">ISBN:</span>
                           <span className="text-white ml-1">{book.isbn as string}</span>
@@ -981,7 +981,7 @@ export default function InventoryPage() {
                           <span className="text-gray-400">COGS:</span>
                           <span className="text-white ml-1">${(book.purchase_price as number)?.toFixed(2)}</span>
                         </div>
-                        <div className="col-span-2 md:col-span-4">
+                                                 <div className="col-span-2">
                           <span className="text-gray-400">Profit:</span>
                           <span className="text-emerald-400 font-semibold ml-1">${profit.toFixed(2)} ({profitPercentage.toFixed(1)}%)</span>
                         </div>
