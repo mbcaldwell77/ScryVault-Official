@@ -572,63 +572,63 @@ export default function InventoryPage() {
           <div className="p-4 lg:p-6">
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 mb-8 overflow-hidden">
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-gray-400 text-sm">Total Books</p>
-                <p className="text-3xl font-bold text-white">{loading ? '...' : filteredBooks.length}</p>
+                <p className="text-2xl lg:text-3xl font-bold text-white">{loading ? '...' : filteredBooks.length}</p>
               </div>
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-emerald-400" />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                <BookOpen className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-gray-400 text-sm">Categories</p>
-                <p className="text-3xl font-bold text-white">{loading ? '...' : categories.length}</p>
+                <p className="text-2xl lg:text-3xl font-bold text-white">{loading ? '...' : categories.length}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-blue-400" />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                <Package className="w-5 h-5 lg:w-6 lg:h-6 text-blue-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-gray-400 text-sm">Sold</p>
-                <p className="text-3xl font-bold text-white">{loading ? '...' : calculateMetrics(filteredBooks).soldBooks}</p>
+                <p className="text-2xl lg:text-3xl font-bold text-white">{loading ? '...' : calculateMetrics(filteredBooks).soldBooks}</p>
               </div>
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-green-400" />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-green-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-gray-400 text-sm">Total Value</p>
-                <p className="text-3xl font-bold text-white">${loading ? '...' : calculateMetrics(filteredBooks).totalValue.toFixed(2)}</p>
+                <p className="text-2xl lg:text-3xl font-bold text-white truncate">${loading ? '...' : calculateMetrics(filteredBooks).totalValue.toFixed(2)}</p>
               </div>
-              <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-purple-400" />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-purple-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-gray-400 text-sm">Total Profit</p>
-                <p className="text-3xl font-bold text-white">${loading ? '...' : calculateMetrics(filteredBooks).totalProfit.toFixed(2)}</p>
+                <p className="text-2xl lg:text-3xl font-bold text-white truncate">${loading ? '...' : calculateMetrics(filteredBooks).totalProfit.toFixed(2)}</p>
               </div>
-              <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-cyan-400" />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-cyan-400" />
               </div>
             </div>
           </div>
@@ -638,7 +638,7 @@ export default function InventoryPage() {
         {!loading && categories.length > 0 && (
           <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 mb-8">
             <h3 className="text-lg font-semibold text-white mb-4">Book Categories</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 overflow-hidden">
               {categories.map((category) => (
                 <div
                   key={category.id as string}

@@ -22,18 +22,18 @@ export default function AnalyticsPage() {
                  {/* Main Content */}
          <div className="p-4 lg:p-6">
 
-        {/* Analytics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Total Revenue</p>
-                <p className="text-3xl font-bold text-white">$45,230</p>
-              </div>
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-emerald-400" />
-              </div>
-            </div>
+                 {/* Analytics Overview */}
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 overflow-hidden">
+                     <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
+             <div className="flex items-center justify-between">
+               <div className="min-w-0 flex-1">
+                 <p className="text-gray-400 text-sm">Total Revenue</p>
+                 <p className="text-2xl lg:text-3xl font-bold text-white truncate">$45,230</p>
+               </div>
+               <div className="w-10 h-10 lg:w-12 lg:h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                 <DollarSign className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-400" />
+               </div>
+             </div>
             <div className="mt-4 flex items-center text-sm">
               <span className="text-emerald-400">+23%</span>
               <span className="text-gray-400 ml-1">from last month</span>

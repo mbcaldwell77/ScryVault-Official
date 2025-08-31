@@ -23,15 +23,15 @@ export default function Dashboard() {
         {/* Dashboard Content */}
         <div className="p-4 lg:p-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 overflow-hidden">
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-gray-400 text-sm">Total Books</p>
-                  <p className="text-3xl font-bold text-white">1,247</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-white">1,247</p>
                 </div>
-                <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-emerald-400" />
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <BookOpen className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-400" />
                 </div>
               </div>
               <div className="mt-4 flex items-center text-sm">
@@ -40,14 +40,14 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-gray-400 text-sm">Active Listings</p>
-                  <p className="text-3xl font-bold text-white">892</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-white">892</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                  <Package className="w-6 h-6 text-blue-400" />
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <Package className="w-5 h-5 lg:w-6 lg:h-6 text-blue-400" />
                 </div>
               </div>
               <div className="mt-4 flex items-center text-sm">
@@ -56,14 +56,14 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-gray-400 text-sm">Monthly Revenue</p>
-                  <p className="text-3xl font-bold text-white">$12,847</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-white truncate">$12,847</p>
                 </div>
-                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-purple-400" />
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-purple-400" />
                 </div>
               </div>
               <div className="mt-4 flex items-center text-sm">
@@ -72,14 +72,14 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-gray-400 text-sm">Profit Margin</p>
-                  <p className="text-3xl font-bold text-white">34.2%</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-white">34.2%</p>
                 </div>
-                <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-cyan-400" />
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-cyan-400" />
                 </div>
               </div>
               <div className="mt-4 flex items-center text-sm">
