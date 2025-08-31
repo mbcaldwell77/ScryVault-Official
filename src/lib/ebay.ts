@@ -16,9 +16,8 @@ const EBAY_BASE_URL = EBAY_PRODUCTION_URL
 // eBay will redirect to the actual URL associated with this RuName
 const EBAY_RU_NAME = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
 
-// Determine the correct redirect URI based on environment
-const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-const EBAY_REDIRECT_URI = isLocalhost ? EBAY_REDIRECT_URI_DEV : EBAY_REDIRECT_URI_PROD
+// Always use production redirect URI for OAuth
+const EBAY_REDIRECT_URI = EBAY_REDIRECT_URI_PROD
 
 // eBay API endpoints
 const ENDPOINTS = {
