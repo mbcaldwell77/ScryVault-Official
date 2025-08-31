@@ -527,20 +527,129 @@ export default function InventoryPage() {
           </div>
         )}
 
-        {/* Books Display */}
-        {!loading && filteredBooks.length > 0 && (
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl overflow-hidden mb-8">
-            <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
-              <h3 className="text-lg font-semibold text-white">Your Books</h3>
-              <button
-                onClick={addSampleBooks}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-              >
-                Add More Samples
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+                 {/* Search and Filters - Moved above inventory */}
+         <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 mb-6">
+           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+             <div className="flex-1 max-w-md">
+               <div className="relative">
+                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                 <input
+                   type="text"
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
+                   placeholder="Search books by title, author, or ISBN..."
+                   className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                 />
+               </div>
+             </div>
+             <div className="flex space-x-4">
+               <button className="flex items-center space-x-2 px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
+                 <Filter className="w-4 h-4" />
+                 <span>Filter</span>
+               </button>
+               <select
+                 value={statusFilter}
+                 onChange={(e) => setStatusFilter(e.target.value)}
+                 className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
+               >
+                 <option value="all">All Status</option>
+                 <option value="draft">Draft</option>
+                 <option value="listed">Listed</option>
+                 <option value="sold">Sold</option>
+               </select>
+             </div>
+           </div>
+         </div>
+
+         {/* Books Display */}
+         {!loading && filteredBooks.length > 0 && (
+           <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl overflow-hidden mb-8">
+             <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+               <h3 className="text-lg font-semibold text-white">Your Books</h3>
+               <button
+                 onClick={addSampleBooks}
+                 className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+               >
+                 Add More Samples
+               </button>
+             </div>
+                         {/* Mobile Card View - Hidden on larger screens */}
+             <div className="lg:hidden space-y-4 p-6">
+               {filteredBooks.map((book) => {
+                 const profit = ((book.asking_price as number) || 0) - ((book.purchase_price as number) || 0);
+                 const profitPercentage = ((book.asking_price as number) || 0) > 0 ? (profit / ((book.asking_price as number) || 0)) * 100 : 0;
+                 
+                 return (
+                   <div key={book.id as string} className="bg-gray-700/30 border border-gray-600/30 rounded-xl p-4">
+                     <div className="flex items-start justify-between mb-3">
+                       <div className="flex-1">
+                         <h4 className="font-medium text-white text-sm">{book.title as string}</h4>
+                         <p className="text-gray-400 text-xs">{(book.authors as string[])?.join(', ')}</p>
+                       </div>
+                       <div className="flex space-x-1 ml-3">
+                         <button
+                           onClick={() => handleViewBook(book)}
+                           className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
+                           title="View Details"
+                         >
+                           <Eye className="w-4 h-4" />
+                         </button>
+                         <button
+                           onClick={() => handleEditBook(book)}
+                           className="p-1 text-gray-400 hover:text-gray-300 hover:bg-gray-500/10 rounded transition-colors"
+                           title="Edit Book"
+                         >
+                           <Edit className="w-4 h-4" />
+                         </button>
+                         <button
+                           onClick={() => handleDeleteBook(book)}
+                           className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                           title="Delete Book"
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </button>
+                       </div>
+                     </div>
+                     
+                     <div className="grid grid-cols-2 gap-3 text-xs">
+                       <div>
+                         <span className="text-gray-400">ISBN:</span>
+                         <span className="text-white ml-1">{book.isbn as string}</span>
+                       </div>
+                       <div>
+                         <span className="text-gray-400">Status:</span>
+                         <span className={cn(
+                           "ml-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                           (book.status as string) === "Listed" && "bg-blue-500/20 text-blue-400",
+                           (book.status as string) === "Sold" && "bg-green-500/20 text-green-400",
+                           (book.status as string) === "draft" && "bg-yellow-500/20 text-yellow-400"
+                         )}>
+                           {(book.status as string)?.charAt(0).toUpperCase() + (book.status as string)?.slice(1)}
+                         </span>
+                       </div>
+                       <div>
+                         <span className="text-gray-400">List Price:</span>
+                         <span className="text-white ml-1">${(book.asking_price as number)?.toFixed(2)}</span>
+                       </div>
+                       <div>
+                         <span className="text-gray-400">COGS:</span>
+                         <span className="text-white ml-1">${(book.purchase_price as number)?.toFixed(2)}</span>
+                       </div>
+                       <div className="col-span-2">
+                         <span className="text-gray-400">Profit:</span>
+                         <span className="text-emerald-400 font-semibold ml-1">${profit.toFixed(2)} ({profitPercentage.toFixed(1)}%)</span>
+                       </div>
+                     </div>
+                   </div>
+                 );
+               })}
+             </div>
+
+             {/* Desktop Table View - Hidden on mobile */}
+             <div className="hidden lg:block overflow-x-auto relative">
+               {/* Scroll indicator */}
+               <div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-gray-800/50 to-transparent pointer-events-none z-10"></div>
+               <table className="w-full min-w-[1200px]">
                 <thead className="bg-gray-700/30">
                   <tr>
                     <th
@@ -597,7 +706,7 @@ export default function InventoryPage() {
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-32">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700/50">
@@ -626,25 +735,25 @@ export default function InventoryPage() {
                             {Math.round((((book.asking_price as number) - (book.purchase_price as number)) / (book.asking_price as number)) * 100)}%
                           </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex space-x-3">
+                      <td className="px-6 py-4 w-32">
+                        <div className="flex space-x-2">
                           <button
                             onClick={() => handleViewBook(book)}
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
+                            className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleEditBook(book)}
-                            className="text-gray-400 hover:text-gray-300 transition-colors"
+                            className="p-1 text-gray-400 hover:text-gray-300 hover:bg-gray-500/10 rounded transition-colors"
                             title="Edit Book"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteBook(book)}
-                            className="text-red-400 hover:text-red-300 transition-colors"
+                            className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
                             title="Delete Book"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -659,39 +768,7 @@ export default function InventoryPage() {
           </div>
         )}
 
-        {/* Search and Filters */}
-        <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search books by title, author, or ISBN..."
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                />
-              </div>
-            </div>
-            <div className="flex space-x-4">
-              <button className="flex items-center space-x-2 px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
-                <Filter className="w-4 h-4" />
-                <span>Filter</span>
-              </button>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 focus:outline-none focus:border-emerald-500"
-              >
-                <option value="all">All Status</option>
-                <option value="draft">Draft</option>
-                <option value="listed">Listed</option>
-                <option value="sold">Sold</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        
 
 
 
