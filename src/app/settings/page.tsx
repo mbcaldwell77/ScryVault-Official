@@ -5,7 +5,7 @@ import Link from "next/link";
 import Sidebar from "../components/Sidebar";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
-import { ebayAPI, EbayAPI } from "@/lib/ebay";
+import { ebayAPI } from "@/lib/ebay";
 import { useState, useEffect } from "react";
 
 export default function SettingsPage() {
@@ -29,7 +29,11 @@ export default function SettingsPage() {
   const handleEbayConnect = async () => {
     try {
       setEbayAuthLoading(true)
-      const authUrl = EbayAPI.generateAuthUrl('/settings')
+      // Generate OAuth URL manually since we can't access the static method
+      const clientId = process.env.NEXT_PUBLIC_EBAY_APP_ID!
+      const ruName = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
+      const scope = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
+      const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scope)}&state=/settings`
       window.location.href = authUrl
     } catch (error) {
       console.error('Error initiating eBay auth:', error)
@@ -162,7 +166,10 @@ export default function SettingsPage() {
                         </button>
                         <button
                           onClick={() => {
-                            const authUrl = EbayAPI.generateAuthUrl('/settings')
+                            const clientId = process.env.NEXT_PUBLIC_EBAY_APP_ID!
+                            const ruName = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
+                            const scope = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
+                            const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scope)}&state=/settings`
                             console.log('Auth URL:', authUrl)
                             console.log('🌐 Opening eBay OAuth page...')
                             window.open(authUrl, '_blank')

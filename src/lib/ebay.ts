@@ -14,8 +14,11 @@ const EBAY_BASE_URL = EBAY_PRODUCTION_URL
 
 // For OAuth requests, use the RuName instead of the actual URL
 // eBay will redirect to the actual URL associated with this RuName
-const EBAY_RU_NAME = 'ldern_Tomes-ldernTom-ScryVa-vgruzptqo'
-const EBAY_REDIRECT_URI = EBAY_RU_NAME
+const EBAY_RU_NAME = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
+
+// Determine the correct redirect URI based on environment
+const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+const EBAY_REDIRECT_URI = isLocalhost ? EBAY_REDIRECT_URI_DEV : EBAY_REDIRECT_URI_PROD
 
 // eBay API endpoints
 const ENDPOINTS = {
@@ -267,21 +270,16 @@ export class EbayAPI {
   static generateAuthUrl(state?: string): string {
     console.log('🔧 Generating eBay OAuth URL:')
     console.log('- Client ID:', EBAY_APP_ID)
-    console.log('- RuName (for OAuth request):', EBAY_REDIRECT_URI)
+    console.log('- RuName (for OAuth request):', EBAY_RU_NAME)
     console.log('- Actual redirect URL (configured in eBay):', EBAY_REDIRECT_URI_DEV)
     console.log('- Base URL:', EBAY_BASE_URL)
     console.log('- Environment:', EBAY_BASE_URL.includes('sandbox') ? 'SANDBOX' : 'PRODUCTION')
 
-    // Match the exact parameter order from eBay developer site
-    const params = new URLSearchParams({
-      client_id: EBAY_APP_ID,
-      response_type: 'code',
-      redirect_uri: EBAY_REDIRECT_URI,
-      scope: 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account https://api.ebay.com/oauth/api_scope/sell.inventory.readonly https://api.ebay.com/oauth/api_scope/sell.account.readonly',
-      ...(state && { state })
-    })
+    // Build URL manually to match eBay's format exactly
+    const scopeParam = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.marketing.readonly https://api.ebay.com/oauth/api_scope/sell.marketing https://api.ebay.com/oauth/api_scope/sell.inventory.readonly https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account.readonly https://api.ebay.com/oauth/api_scope/sell.account https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly https://api.ebay.com/oauth/api_scope/sell.fulfillment https://api.ebay.com/oauth/api_scope/sell.analytics.readonly https://api.ebay.com/oauth/api_scope/sell.finances https://api.ebay.com/oauth/api_scope/sell.payment.dispute https://api.ebay.com/oauth/api_scope/commerce.identity.readonly https://api.ebay.com/oauth/api_scope/sell.reputation https://api.ebay.com/oauth/api_scope/sell.reputation.readonly https://api.ebay.com/oauth/api_scope/commerce.notification.subscription https://api.ebay.com/oauth/api_scope/commerce.notification.subscription.readonly https://api.ebay.com/oauth/api_scope/sell.stores https://api.ebay.com/oauth/api_scope/sell.stores.readonly https://api.ebay.com/oauth/scope/sell.edelivery https://api.ebay.com/oauth/api_scope/commerce.vero'
 
-    const url = `${ENDPOINTS.AUTHORIZATION}?${params}`
+    const url = `${ENDPOINTS.AUTHORIZATION}?client_id=${EBAY_APP_ID}&response_type=code&redirect_uri=${EBAY_RU_NAME}&scope=${encodeURIComponent(scopeParam)}${state ? `&state=${encodeURIComponent(state)}` : ''}`
+
     console.log('- Final OAuth URL:', url)
     console.log('ℹ️ eBay will redirect to:', EBAY_REDIRECT_URI_DEV)
 
@@ -299,7 +297,7 @@ export class EbayAPI {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${btoa(`${EBAY_APP_ID}:${process.env.EBAY_CERT_ID}`)}`
+          'Authorization': `Basic ${btoa(`${EBAY_APP_ID}:${EBAY_CERT_ID}`)}`
         },
         body: new URLSearchParams({
           grant_type: 'authorization_code',
@@ -328,7 +326,17 @@ export class EbayAPI {
   }
 
   // Create inventory item
-  async createInventoryItem(sku: string, bookData: any): Promise<EbayListingResponse> {
+  async createInventoryItem(sku: string, bookData: {
+    title: string
+    description?: string
+    authors?: string[]
+    language?: string
+    published_date?: string
+    isbn?: string
+    condition?: string
+    condition_notes?: string
+    asking_price?: number
+  }): Promise<EbayListingResponse> {
     try {
       const inventoryData = {
         sku: sku,
@@ -339,7 +347,7 @@ export class EbayAPI {
             quantity: 1
           }
         },
-        condition: this.mapConditionToEbay(bookData.condition),
+        condition: this.mapConditionToEbay(bookData.condition || 'good'),
         conditionDescription: bookData.condition_notes || '',
         product: {
           title: bookData.title,
@@ -388,7 +396,12 @@ export class EbayAPI {
   }
 
   // Create offer for inventory item
-  async createOffer(sku: string, bookData: any): Promise<EbayOfferResponse> {
+  async createOffer(sku: string, bookData: {
+    title: string
+    description?: string
+    authors?: string[]
+    asking_price?: number
+  }): Promise<EbayOfferResponse> {
     try {
       const offerData = {
         sku: sku,
@@ -485,7 +498,9 @@ export class EbayAPI {
   // Test eBay API connection
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      console.log('Testing eBay API configuration...')
+      console.log('🧪 Testing eBay API configuration...')
+
+      // Check environment variables
       console.log('EBAY_APP_ID available:', !!EBAY_APP_ID)
       console.log('EBAY_CERT_ID available:', !!process.env.EBAY_CERT_ID) // Server-side only
       console.log('EBAY_REDIRECT_URI (RuName):', EBAY_REDIRECT_URI)
@@ -499,10 +514,9 @@ export class EbayAPI {
         throw new Error('NEXT_PUBLIC_EBAY_REDIRECT_URI_DEV environment variable is not configured. Please add it to your .env.local file.')
       }
 
-      // Check if we're using production URLs with production credentials
+      // Check environment consistency
       const isProduction = EBAY_BASE_URL.includes('api.ebay.com') && !EBAY_BASE_URL.includes('sandbox')
       const isProductionAppId = EBAY_APP_ID.includes('PRD-')
-
       console.log('Using production URLs:', isProduction)
       console.log('Using production App ID:', isProductionAppId)
 
@@ -511,20 +525,29 @@ export class EbayAPI {
       }
 
       // Try to generate auth URL to test configuration
+      console.log('🔗 Generating OAuth URL...')
       const authUrl = EbayAPI.generateAuthUrl('/test')
-      console.log('Generated auth URL:', authUrl)
 
-      // Check if the URL looks valid
+      // Validate the URL format
       if (!authUrl.includes('client_id=') || !authUrl.includes('redirect_uri=')) {
         throw new Error('Generated OAuth URL appears to be malformed')
       }
 
+      // Check if the URL matches the expected format
+      const expectedStart = 'https://auth.ebay.com/oauth2/authorize?'
+      if (!authUrl.startsWith(expectedStart)) {
+        throw new Error('OAuth URL does not use the correct eBay endpoint')
+      }
+
+      console.log('✅ OAuth URL generation successful')
+      console.log('📋 Final OAuth URL:', authUrl)
+
       return {
         success: true,
-        message: 'eBay API configuration looks good! Environment variables are properly loaded.'
+        message: 'eBay API configuration looks good! OAuth URL generated successfully.'
       }
     } catch (error) {
-      console.error('eBay API test failed:', error)
+      console.error('❌ eBay API test failed:', error)
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Unknown error occurred during API test'
@@ -548,9 +571,8 @@ export class EbayAPI {
   }
 }
 
-// Export singleton instance and class
+// Export singleton instance
 export const ebayAPI = new EbayAPI()
-export { EbayAPI }
 
 // Profit calculation utilities
 export interface ProfitCalculation {
@@ -619,7 +641,10 @@ export const getProfitStatus = (profit: ProfitCalculation): 'excellent' | 'good'
 }
 
 // Utility functions
-export const generateEbayListingTitle = (book: any): string => {
+export const generateEbayListingTitle = (book: {
+  title: string
+  authors?: string[]
+}): string => {
   const title = book.title
   const authors = book.authors?.join(', ') || ''
   const maxLength = 80 // eBay title limit
@@ -639,7 +664,7 @@ export const generateEbayListingTitle = (book: any): string => {
 
 export const calculateEbayFees = (price: number): { insertionFee: number; finalValueFee: number; totalFees: number } => {
   // Simplified eBay fee calculation for US marketplace
-  let insertionFee = 0.35 // Basic insertion fee
+  const insertionFee = 0.35 // Basic insertion fee
   let finalValueFee = 0
 
   // Final value fee based on price
