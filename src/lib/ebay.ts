@@ -3,9 +3,7 @@ import { supabase } from './supabase'
 // eBay API Configuration
 const EBAY_APP_ID = process.env.NEXT_PUBLIC_EBAY_APP_ID!
 const EBAY_CERT_ID = process.env.EBAY_CERT_ID!
-const EBAY_DEV_ID = process.env.EBAY_DEV_ID!
 const EBAY_PRODUCTION_URL = process.env.NEXT_PUBLIC_EBAY_PRODUCTION_URL || 'https://api.ebay.com'
-const EBAY_SANDBOX_URL = process.env.NEXT_PUBLIC_EBAY_SANDBOX_URL || 'https://api.sandbox.ebay.com'
 const EBAY_REDIRECT_URI_DEV = process.env.NEXT_PUBLIC_EBAY_REDIRECT_URI_DEV!
 const EBAY_REDIRECT_URI_PROD = process.env.NEXT_PUBLIC_EBAY_REDIRECT_URI_PROD!
 

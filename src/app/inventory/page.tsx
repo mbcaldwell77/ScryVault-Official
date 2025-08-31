@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X, AlertCircle, AlertTriangle, ExternalLink, DollarSign } from "lucide-react";
+import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X, AlertCircle, AlertTriangle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -9,7 +9,7 @@ import Header from "@/components/Header";
 import Sidebar from "../components/Sidebar";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { ebayAPI, generateEbayListingTitle, calculateEbayFees, calculateProfit, formatCurrency, getProfitColor, getProfitStatus } from "@/lib/ebay";
+import { ebayAPI, generateEbayListingTitle, calculateProfit, formatCurrency, getProfitColor } from "@/lib/ebay";
 
 // Note: Sidebar component removed in favor of Header for authentication
 
@@ -221,7 +221,7 @@ export default function InventoryPage() {
       const sku = `SCRY-${book.id}-${Date.now()}`
 
       // Create inventory item first
-      const inventoryItem = await ebayAPI.createInventoryItem(sku, book)
+      await ebayAPI.createInventoryItem(sku, book)
 
       // Create offer for the inventory item
       const offer = await ebayAPI.createOffer(sku, book)
