@@ -209,6 +209,19 @@ export default function InventoryPage() {
 
   // Handle eBay listing creation
   const handleEbayListing = async (book: Record<string, unknown>) => {
+    // Type assertion to ensure required properties exist
+    const bookData = book as {
+      id: string
+      title: string
+      description?: string
+      authors?: string[]
+      language?: string
+      published_date?: string
+      isbn?: string
+      condition?: string
+      condition_notes?: string
+      asking_price?: number
+    }
     if (ebayAuthStatus !== 'connected') {
       showToast('Please connect your eBay account first', 'error')
       return
@@ -221,22 +234,22 @@ export default function InventoryPage() {
       const sku = `SCRY-${book.id}-${Date.now()}`
 
       // Create inventory item first
-      await ebayAPI.createInventoryItem(sku, book)
+      await ebayAPI.createInventoryItem(sku, bookData)
 
       // Create offer for the inventory item
-      const offer = await ebayAPI.createOffer(sku, book)
+      const offer = await ebayAPI.createOffer(sku, bookData)
 
       // Publish the offer to create live listing
       const listing = await ebayAPI.publishOffer(offer.offerId)
 
       // Save listing data to database
       await supabase.from('listings').insert([{
-        book_id: book.id,
+        book_id: bookData.id,
         user_id: '550e8400-e29b-41d4-a716-446655440000', // Demo user ID
         ebay_item_id: listing.listingId,
-        title: generateEbayListingTitle(book),
-        description: book.description || `${book.title} by ${(book.authors as string[])?.join(', ') || 'Unknown Author'}`,
-        start_price: book.asking_price,
+        title: generateEbayListingTitle(bookData),
+        description: bookData.description || `${bookData.title} by ${bookData.authors?.join(', ') || 'Unknown Author'}`,
+        start_price: bookData.asking_price,
         status: 'listed',
         ebay_response: listing
       }])
