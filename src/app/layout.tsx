@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
+import { AuthProvider } from "@/lib/auth-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +19,9 @@ export const metadata: Metadata = {
   description: "Transform book selling with AI-powered automation. From ISBN scan to live eBay listing in minutes.",
   keywords: ["book selling", "eBay automation", "ISBN scanner", "inventory management", "AI photography"],
   authors: [{ name: "ScryVault Team" }],
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export const viewport = {
@@ -36,7 +40,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-900 text-white`}
       >
         <Suspense fallback={<div className="min-h-screen bg-gray-900 flex items-center justify-center">Loading...</div>}>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </Suspense>
       </body>
     </html>

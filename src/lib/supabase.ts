@@ -23,6 +23,36 @@ const GOOGLE_BOOKS_BASE_URL = 'https://www.googleapis.com/books/v1/volumes'
 
 export const supabaseService = supabase
 
+// Auth helpers
+export const getCurrentUser = async () => {
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error) throw error
+  return user
+}
+
+export const signUp = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  })
+  if (error) throw error
+  return { data, error }
+}
+
+export const signIn = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+  if (error) throw error
+  return { data, error }
+}
+
+export const signOut = async () => {
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
+}
+
 // Book data interfaces
 export interface BookData {
   title: string

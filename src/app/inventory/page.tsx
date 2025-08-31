@@ -2,15 +2,12 @@
 
 import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
+import AuthGuard from "@/components/AuthGuard";
+import Header from "@/components/Header";
 import { useEffect, useState } from "react";
 
-// Dynamically import Sidebar to reduce initial bundle size
-const Sidebar = dynamic(() => import("../components/Sidebar"), {
-  ssr: false,
-  loading: () => <div className="fixed inset-y-0 left-0 w-64 bg-gray-900/95 backdrop-blur-sm border-r border-gray-700/50" />
-});
+// Note: Sidebar component removed in favor of Header for authentication
 
 export default function InventoryPage() {
   const [categories, setCategories] = useState<Record<string, unknown>[]>([]);
@@ -340,9 +337,9 @@ export default function InventoryPage() {
     }
   };
   return (
-    <>
-      <Sidebar />
-      <div className="pl-64">
+    <AuthGuard>
+      <div className="min-h-screen bg-gray-900">
+        <Header />
         {/* Page Header */}
         <div className="p-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
@@ -809,6 +806,6 @@ export default function InventoryPage() {
           </div>
         </div>
       )}
-    </>
+    </AuthGuard>
   );
 }

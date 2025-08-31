@@ -4,14 +4,11 @@ import { useState, useEffect } from "react";
 import { Sparkles, Search, Upload, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { lookupBookByISBN, validateISBN, BookData, supabaseService } from "@/lib/supabase";
+import AuthGuard from "@/components/AuthGuard";
+import Header from "@/components/Header";
 
-// Dynamically import Sidebar to reduce initial bundle size
-const Sidebar = dynamic(() => import("../components/Sidebar"), {
-  ssr: false,
-  loading: () => <div className="fixed inset-y-0 left-0 w-64 bg-gray-900/95 backdrop-blur-sm border-r border-gray-700/50" />
-});
+// Note: Sidebar component removed in favor of Header for authentication
 
 interface ManualBookData {
   title: string;
@@ -232,9 +229,10 @@ export default function ScanPage() {
   };
 
   return (
-    <>
-      <Sidebar />
-      <div className="pl-64">
+    <AuthGuard>
+      <div className="min-h-screen bg-gray-900">
+        <Header />
+        <div className="max-w-7xl mx-auto p-6">
         {/* Page Header */}
         <div className="p-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
@@ -622,6 +620,7 @@ export default function ScanPage() {
           </div>
         </div>
       )}
-    </>
+    </div>
+  </AuthGuard>
   );
 }

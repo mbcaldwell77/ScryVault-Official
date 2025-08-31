@@ -27,9 +27,14 @@ export default function Home() {
               <a href="#pricing" className="text-gray-300 hover:text-emerald-400 transition-colors">Pricing</a>
               <a href="#about" className="text-gray-300 hover:text-emerald-400 transition-colors">About</a>
             </nav>
-            <Link href="/dashboard" className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
-              Get Started
-            </Link>
+            <div className="flex items-center space-x-4">
+              <Link href="/demo" className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
+                Try Demo
+              </Link>
+              <Link href="/login" className="text-gray-300 hover:text-emerald-400 transition-colors">
+                Sign In
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -65,7 +70,7 @@ export default function Home() {
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
             </Link>
-            <Link href="/dashboard" className="border border-gray-600 text-gray-300 px-8 py-4 rounded-xl font-semibold text-lg hover:border-emerald-500 hover:text-emerald-400 transition-all duration-200">
+            <Link href="/signup" className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
               Watch Demo
             </Link>
           </div>
