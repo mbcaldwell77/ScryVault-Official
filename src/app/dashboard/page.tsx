@@ -8,10 +8,10 @@ export default function Dashboard() {
   return (
     <AuthGuard>
       <Sidebar />
-      <div className="min-h-screen bg-gray-900 pl-64">
+      <div className="min-h-screen bg-gray-900 lg:pl-64">
         <Header />
         {/* Page Header */}
-        <div className="p-6 border-b border-gray-700/50">
+        <div className="p-6 pt-20 lg:pt-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Dashboard</h2>

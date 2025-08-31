@@ -271,9 +271,9 @@ export default function ScanPage() {
   return (
     <AuthGuard>
       <Sidebar />
-      <div className="min-h-screen bg-gray-900 pl-64">
+      <div className="min-h-screen bg-gray-900 lg:pl-64">
         <Header />
-        <div className="max-w-7xl mx-auto p-6">
+        <div className="max-w-7xl mx-auto p-6 pt-20 lg:pt-6">
         {/* Page Header */}
         <div className="p-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">

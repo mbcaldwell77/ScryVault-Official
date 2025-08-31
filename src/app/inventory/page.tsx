@@ -508,10 +508,10 @@ export default function InventoryPage() {
   return (
     <AuthGuard>
       <Sidebar />
-      <div className="min-h-screen bg-gray-900 pl-64">
+      <div className="min-h-screen bg-gray-900 lg:pl-64">
         <Header />
-        {/* Page Header */}
-        <div className="p-6 border-b border-gray-700/50">
+                  {/* Page Header */}
+          <div className="p-6 pt-20 lg:pt-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Inventory</h2>
@@ -902,7 +902,7 @@ export default function InventoryPage() {
                 )}
               </div>
                          {/* Mobile/Tablet Card View - Hidden on desktop */}
-             <div className="xl:hidden space-y-4 p-6">
+             <div className="lg:hidden space-y-4 p-6">
                {filteredBooks.map((book) => {
                  const profit = ((book.asking_price as number) || 0) - ((book.purchase_price as number) || 0);
                  const profitPercentage = ((book.asking_price as number) || 0) > 0 ? (profit / ((book.asking_price as number) || 0)) * 100 : 0;
@@ -992,10 +992,10 @@ export default function InventoryPage() {
              </div>
 
                            {/* Desktop Table View - Hidden on mobile/tablet */}
-              <div className="hidden xl:block overflow-x-auto relative">
+              <div className="hidden lg:block overflow-x-auto relative">
                 {/* Scroll indicator */}
                 <div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-gray-800/50 to-transparent pointer-events-none z-10"></div>
-                <table className="w-full min-w-[2000px]">
+                <table className="w-full min-w-[1200px]">
                 <thead className="bg-gray-700/30">
                   <tr>
                     <th
