@@ -311,12 +311,17 @@ INSERT INTO categories (name, description, color) VALUES
 -- DEVELOPMENT HELPERS (Remove in production)
 -- =============================================
 
--- Temporarily disable RLS for development
--- ALTER TABLE books DISABLE ROW LEVEL SECURITY;
--- ALTER TABLE scans DISABLE ROW LEVEL SECURITY;
--- ALTER TABLE photos DISABLE ROW LEVEL SECURITY;
--- ALTER TABLE listings DISABLE ROW LEVEL SECURITY;
--- ALTER TABLE user_settings DISABLE ROW LEVEL SECURITY;
+-- =============================================
+-- TEMPORARY FIX FOR DEMO DATA PERSISTENCE
+-- =============================================
+-- For demo/personal use, temporarily disable RLS to allow data persistence
+-- Remove these lines when implementing proper authentication
+
+ALTER TABLE books DISABLE ROW LEVEL SECURITY;
+ALTER TABLE scans DISABLE ROW LEVEL SECURITY;
+ALTER TABLE photos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE listings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE user_settings DISABLE ROW LEVEL SECURITY;
 
 -- Temporarily make user_id nullable for development
 -- ALTER TABLE books ALTER COLUMN user_id DROP NOT NULL;

@@ -36,6 +36,8 @@ export default function ScanPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recentBooks, setRecentBooks] = useState<Record<string, unknown>[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
   const [manualBookData, setManualBookData] = useState<ManualBookData>({
     title: '',
     authors: [],
@@ -138,13 +140,13 @@ export default function ScanPage() {
       const { error } = await supabaseService
         .from('books')
         .insert([{
-          user_id: '550e8400-e29b-41d4-a716-446655440000', // Demo user ID
+          user_id: '550e8400-e29b-41d4-a716-446655440000', // TEMP: Demo user ID - data persistence fixed with disabled RLS
           title: bookDataToSave.title,
           authors: bookDataToSave.authors,
           isbn: bookDataToSave.isbn,
           isbn13: bookDataToSave.isbn13 || null,
           publisher: bookDataToSave.publisher || null,
-          published_date: bookDataToSave.publishedDate || null,
+          published_date: bookDataToSave.publishedDate ?? null,
           page_count: bookDataToSave.pageCount || null,
           description: bookDataToSave.description || null,
           condition: 'good',
@@ -179,7 +181,7 @@ export default function ScanPage() {
       });
 
       await loadRecentBooks();
-      alert(`Book "${bookDataToSave.title}" has been added to your inventory!`);
+      showSuccessToast(`Book "${bookDataToSave.title}" has been added to your inventory!`);
 
     } catch (error) {
       console.error('Error saving book:', error);
@@ -187,6 +189,16 @@ export default function ScanPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const showSuccessToast = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+      setShowToast(false);
+      setToastMessage(null);
+    }, 4000);
   };
 
   const handleManualSubmit = () => {
@@ -236,6 +248,21 @@ export default function ScanPage() {
         {/* Main Content */}
         <div className="p-6">
           <div className="max-w-4xl mx-auto">
+            {/* Security Warning */}
+            <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-sm">⚠️</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-amber-400 font-medium">Demo Mode - Data Will Persist</p>
+                  <p className="text-amber-300 text-sm">
+                    RLS disabled for demo use. Your books will save and persist, but add authentication before production use.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Header */}
             <div className="text-center mb-12">
               <div className="inline-flex items-center space-x-2 bg-gray-800/50 border border-gray-700 rounded-full px-4 py-2 mb-6">
@@ -337,12 +364,18 @@ export default function ScanPage() {
                         width={128}
                         height={192}
                         className="w-32 h-48 object-cover rounded-lg shadow-lg"
+                        onError={(e) => {
+                          // Hide the image and show fallback on error
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const fallback = target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      <div className="w-32 h-48 bg-gray-700 rounded-lg flex items-center justify-center">
-                        <BookOpen className="w-12 h-12 text-gray-400" />
-                      </div>
-                    )}
+                    ) : null}
+                    <div className="w-32 h-48 bg-gray-700 rounded-lg flex items-center justify-center" style={{ display: bookData.imageUrl ? 'none' : 'flex' }}>
+                      <BookOpen className="w-12 h-12 text-gray-400" />
+                    </div>
                   </div>
 
                   {/* Book Details */}
@@ -560,6 +593,35 @@ export default function ScanPage() {
           </div>
         </div>
       </div>
+
+      {/* Success Toast */}
+      {showToast && toastMessage && (
+        <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 duration-300">
+          <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 rounded-xl p-4 shadow-xl backdrop-blur-sm">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                  <Check className="w-4 h-4 text-white" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="text-emerald-400 font-medium text-sm">Success!</p>
+                <p className="text-emerald-300 text-sm mt-1">{toastMessage}</p>
+              </div>
+              <button
+                onClick={() => setShowToast(false)}
+                className="text-emerald-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Progress bar */}
+            <div className="mt-3 h-1 bg-emerald-500/20 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

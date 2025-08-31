@@ -93,7 +93,7 @@ const normalizeGoogleBooksData = (volume: GoogleBooksVolume): BookData => {
     isbn,
     isbn13,
     publisher: volume.volumeInfo.publisher,
-    publishedDate: volume.volumeInfo.publishedDate,
+    publishedDate: normalizePublishedDate(volume.volumeInfo.publishedDate),
     pageCount: volume.volumeInfo.pageCount,
     description: volume.volumeInfo.description,
     categories: volume.volumeInfo.categories,
@@ -101,6 +101,46 @@ const normalizeGoogleBooksData = (volume: GoogleBooksVolume): BookData => {
     language: volume.volumeInfo.language
   }
 }
+
+// Helper function to normalize dates from Google Books API
+const normalizePublishedDate = (dateStr?: string): string | undefined => {
+  if (!dateStr) return undefined
+
+  // Handle different date formats from Google Books API
+  // Examples: "2020", "2020-01", "2020-01-15"
+
+  const parts = dateStr.split('-')
+
+  if (parts.length === 1) {
+    // Year only (e.g., "2020") -> "2020-01-01"
+    const year = parseInt(parts[0])
+    if (year >= 1000 && year <= 9999) {
+      return `${year}-01-01`
+    }
+  } else if (parts.length === 2) {
+    // Year and month (e.g., "2020-01") -> "2020-01-01"
+    const year = parseInt(parts[0])
+    const month = parseInt(parts[1])
+    if (year >= 1000 && year <= 9999 && month >= 1 && month <= 12) {
+      return `${year}-${month.toString().padStart(2, '0')}-01`
+    }
+  } else if (parts.length >= 3) {
+    // Full date or more (e.g., "2020-01-15") -> use as-is if valid
+    const year = parseInt(parts[0])
+    const month = parseInt(parts[1])
+    const day = parseInt(parts[2])
+    if (year >= 1000 && year <= 9999 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+    }
+  }
+
+  // If we can't parse it, return undefined to avoid database errors
+  console.warn(`Invalid date format from Google Books API: "${dateStr}". Using undefined.`)
+  return undefined
+}
+
+// Export the date normalization function for use in other parts of the app
+export { normalizePublishedDate }
 
 // Main book lookup function with graceful failure
 export const lookupBookByISBN = async (isbn: string): Promise<BookData | null> => {

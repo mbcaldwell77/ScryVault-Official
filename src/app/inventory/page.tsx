@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
+import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
@@ -25,6 +25,8 @@ export default function InventoryPage() {
   const [selectedBook, setSelectedBook] = useState<Record<string, unknown> | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
 
   // Calculate real metrics from book data
   const calculateMetrics = (bookList: Record<string, unknown>[]) => {
@@ -95,6 +97,16 @@ export default function InventoryPage() {
     }
   };
 
+  const showSuccessToast = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+      setShowToast(false);
+      setToastMessage(null);
+    }, 4000);
+  };
+
   // Action handlers
   const handleViewBook = (book: Record<string, unknown>) => {
     setSelectedBook(book);
@@ -122,7 +134,7 @@ export default function InventoryPage() {
 
         // Refresh data after deletion
         await fetchData();
-        alert(`"${book.title as string}" has been deleted from your inventory.`);
+        showSuccessToast(`"${book.title as string}" has been deleted from your inventory.`);
       } catch (err) {
         console.error('Error deleting book:', err);
         alert('An unexpected error occurred while deleting the book.');
@@ -218,8 +230,9 @@ export default function InventoryPage() {
     try {
       setLoading(true);
 
-      // For now, let's bypass the user_id requirement since we don't have auth set up yet
-      // We'll insert without user_id and let Supabase handle it, or we can disable RLS temporarily
+      // TEMPORARY: Using demo user ID for personal use
+      // Data persistence fixed by disabling RLS in database
+      // TODO: Replace with proper user authentication before production/multi-user use
 
       const sampleBooks = [
         {
@@ -347,6 +360,19 @@ export default function InventoryPage() {
 
         {/* Database Connection Status */}
         <div className="p-6 border-b border-gray-700/50">
+          <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs">⚠️</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-amber-400 font-medium text-sm">Demo Mode - Data Persistence Fixed</p>
+                <p className="text-amber-300 text-xs mt-1">
+                  RLS disabled for demo use. Your data will persist, but add authentication before production/multi-user use.
+                </p>
+              </div>
+            </div>
+          </div>
           <div className="bg-gray-800/30 rounded-lg p-4">
             {loading ? (
               <div className="flex items-center space-x-2">
@@ -750,6 +776,35 @@ export default function InventoryPage() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Toast */}
+      {showToast && toastMessage && (
+        <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 duration-300">
+          <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 rounded-xl p-4 shadow-xl backdrop-blur-sm">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                  <Check className="w-4 h-4 text-white" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="text-emerald-400 font-medium text-sm">Success!</p>
+                <p className="text-emerald-300 text-sm mt-1">{toastMessage}</p>
+              </div>
+              <button
+                onClick={() => setShowToast(false)}
+                className="text-emerald-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Progress bar */}
+            <div className="mt-3 h-1 bg-emerald-500/20 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full animate-pulse"></div>
             </div>
           </div>
         </div>
