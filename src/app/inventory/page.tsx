@@ -1,6 +1,7 @@
 "use client";
 
-import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X, AlertCircle, AlertTriangle } from "lucide-react";
+import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X, AlertCircle, AlertTriangle, ExternalLink, DollarSign } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
@@ -8,6 +9,7 @@ import Header from "@/components/Header";
 import Sidebar from "../components/Sidebar";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { ebayAPI, generateEbayListingTitle, calculateEbayFees, calculateProfit, formatCurrency, getProfitColor, getProfitStatus } from "@/lib/ebay";
 
 // Note: Sidebar component removed in favor of Header for authentication
 
@@ -34,6 +36,8 @@ export default function InventoryPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showToastState, setShowToastState] = useState(false);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [ebayAuthStatus, setEbayAuthStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking')
+  const [ebayListingLoading, setEbayListingLoading] = useState<string | null>(null)
 
   const { user } = useAuth()
   const isDemoMode = !user && typeof window !== 'undefined' && localStorage.getItem('scryvault_demo_mode') === 'true'
@@ -189,7 +193,74 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchData();
+    checkEbayAuthStatus();
   }, []);
+
+  // Check eBay authentication status
+  const checkEbayAuthStatus = async () => {
+    try {
+      const isAuthenticated = await ebayAPI.isAuthenticated()
+      setEbayAuthStatus(isAuthenticated ? 'connected' : 'disconnected')
+    } catch (error) {
+      console.error('Error checking eBay auth status:', error)
+      setEbayAuthStatus('disconnected')
+    }
+  }
+
+  // Handle eBay listing creation
+  const handleEbayListing = async (book: Record<string, unknown>) => {
+    if (ebayAuthStatus !== 'connected') {
+      showToast('Please connect your eBay account first', 'error')
+      return
+    }
+
+    try {
+      setEbayListingLoading(book.id as string)
+
+      // Generate SKU for the listing
+      const sku = `SCRY-${book.id}-${Date.now()}`
+
+      // Create inventory item first
+      const inventoryItem = await ebayAPI.createInventoryItem(sku, book)
+
+      // Create offer for the inventory item
+      const offer = await ebayAPI.createOffer(sku, book)
+
+      // Publish the offer to create live listing
+      const listing = await ebayAPI.publishOffer(offer.offerId)
+
+      // Save listing data to database
+      await supabase.from('listings').insert([{
+        book_id: book.id,
+        user_id: '550e8400-e29b-41d4-a716-446655440000', // Demo user ID
+        ebay_item_id: listing.listingId,
+        title: generateEbayListingTitle(book),
+        description: book.description || `${book.title} by ${(book.authors as string[])?.join(', ') || 'Unknown Author'}`,
+        start_price: book.asking_price,
+        status: 'listed',
+        ebay_response: listing
+      }])
+
+      // Update book status to listed
+      await supabase
+        .from('books')
+        .update({
+          status: 'listed',
+          listed_at: new Date().toISOString()
+        })
+        .eq('id', book.id)
+
+      // Refresh data
+      await fetchData()
+
+      showToast(`"${book.title}" has been listed on eBay!`, 'success')
+    } catch (error) {
+      console.error('Error creating eBay listing:', error)
+      showToast('Failed to create eBay listing. Please try again.', 'error')
+    } finally {
+      setEbayListingLoading(null)
+    }
+  }
 
   // Filter books based on all filters
   useEffect(() => {
@@ -571,7 +642,30 @@ export default function InventoryPage() {
                   {/* Main Content */}
           <div className="p-4 lg:p-6">
 
-        {/* Stats Cards */}
+                  {/* eBay Connection Notice */}
+          {ebayAuthStatus === 'disconnected' && books.length > 0 && (
+            <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-4 mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <ExternalLink className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-orange-400 font-medium">Connect eBay to Start Selling</p>
+                  <p className="text-orange-300 text-sm">
+                    Connect your eBay account to automatically create listings from your inventory.
+                  </p>
+                </div>
+                <Link
+                  href="/settings"
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                >
+                  Connect Now
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 mb-8 overflow-hidden">
           <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
             <div className="flex items-center justify-between">
@@ -929,6 +1023,20 @@ export default function InventoryPage() {
                          >
                            <Edit className="w-4 h-4" />
                          </button>
+                         {(book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
+                           <button
+                             onClick={() => handleEbayListing(book)}
+                             disabled={ebayListingLoading === book.id}
+                             className="p-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded transition-colors disabled:opacity-50"
+                             title="List on eBay"
+                           >
+                             {ebayListingLoading === book.id ? (
+                               <div className="w-4 h-4 border border-orange-400 border-t-transparent rounded-full animate-spin" />
+                             ) : (
+                               <ExternalLink className="w-4 h-4" />
+                             )}
+                           </button>
+                         )}
                          <button
                            onClick={() => handleDeleteBook(book)}
                            className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
@@ -985,6 +1093,25 @@ export default function InventoryPage() {
                           <span className="text-gray-400">Profit:</span>
                           <span className="text-emerald-400 font-semibold ml-1">${profit.toFixed(2)} ({profitPercentage.toFixed(1)}%)</span>
                         </div>
+                        {ebayAuthStatus === 'connected' && (book.status as string) === 'draft' && (
+                          <div className="col-span-2 mt-2 p-2 bg-gray-700/30 rounded-lg">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-400">eBay Profit:</span>
+                              {(() => {
+                                const ebayProfit = calculateProfit(
+                                  (book.asking_price as number) || 0,
+                                  (book.purchase_price as number) || 0,
+                                  3.99 // Standard shipping cost
+                                )
+                                return (
+                                  <span className={`font-semibold ${getProfitColor(ebayProfit.netProfit)}`}>
+                                    {formatCurrency(ebayProfit.netProfit)} ({ebayProfit.profitMargin.toFixed(1)}%)
+                                  </span>
+                                )
+                              })()}
+                            </div>
+                          </div>
+                        )}
                       </div>
                    </div>
                  );
@@ -1054,7 +1181,8 @@ export default function InventoryPage() {
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-32">Actions</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">eBay Profit</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-40">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700/50">
@@ -1101,7 +1229,28 @@ export default function InventoryPage() {
                             {Math.round((((book.asking_price as number) - (book.purchase_price as number)) / (book.asking_price as number)) * 100)}%
                           </div>
                       </td>
-                      <td className="px-6 py-4 w-32">
+                      <td className="px-6 py-4">
+                        {ebayAuthStatus === 'connected' && (book.status as string) === 'draft' ? (() => {
+                          const ebayProfit = calculateProfit(
+                            (book.asking_price as number) || 0,
+                            (book.purchase_price as number) || 0,
+                            3.99 // Standard shipping cost
+                          )
+                          return (
+                            <div className="text-sm">
+                              <div className={`font-semibold ${getProfitColor(ebayProfit.netProfit)}`}>
+                                {formatCurrency(ebayProfit.netProfit)}
+                              </div>
+                              <div className="text-gray-400 text-xs">
+                                {ebayProfit.profitMargin.toFixed(1)}% margin
+                              </div>
+                            </div>
+                          )
+                        })() : (
+                          <span className="text-gray-500 text-sm">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 w-40">
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleViewBook(book)}
@@ -1117,6 +1266,20 @@ export default function InventoryPage() {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
+                          {(book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
+                            <button
+                              onClick={() => handleEbayListing(book)}
+                              disabled={ebayListingLoading === book.id}
+                              className="p-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded transition-colors disabled:opacity-50"
+                              title="List on eBay"
+                            >
+                              {ebayListingLoading === book.id ? (
+                                <div className="w-4 h-4 border border-orange-400 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <ExternalLink className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
                           <button
                             onClick={() => handleDeleteBook(book)}
                             className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"

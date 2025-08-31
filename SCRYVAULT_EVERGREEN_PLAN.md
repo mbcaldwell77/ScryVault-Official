@@ -239,4 +239,20 @@ ScryVault is an all-in-one application that transforms the tedious process of se
 
 ---
 
+## 🔐 **Security & Development Guidelines**
+
+### **Environment Variables Access**
+- **`.env.local` files are blocked** by Cursor IDE for security reasons
+- **Agents cannot access** environment variables directly
+- **Request information from user** when environment variables are needed
+- **Do not attempt to read** `.env.local` files - this will fail and is not allowed
+
+### **API Keys & Credentials**
+- **Never commit** API keys or credentials to version control
+- **Use environment variables** for all sensitive configuration
+- **Request credentials** from user when setting up new integrations
+- **Document required variables** in README and setup instructions
+
+---
+
 *This document serves as the foundational blueprint for ScryVault development. It should be updated as the project evolves and new requirements emerge.*
