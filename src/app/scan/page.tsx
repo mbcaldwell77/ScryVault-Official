@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, Search, Upload, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2 } from "lucide-react";
+import { Sparkles, Search, Upload, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2, Camera } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { lookupBookByISBN, validateISBN, BookData, supabaseService } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import Sidebar from "../components/Sidebar";
+import BarcodeScanner from "@/components/BarcodeScanner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 
@@ -36,6 +37,7 @@ export default function ScanPage() {
   const [bookData, setBookData] = useState<BookData | null>(null);
   const [showManualForm, setShowManualForm] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recentBooks, setRecentBooks] = useState<Record<string, unknown>[]>([]);
   const [categories, setCategories] = useState<Record<string, unknown>[]>([]);
@@ -160,6 +162,12 @@ export default function ScanPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBarcodeScan = (scannedISBN: string) => {
+    setShowScanner(false);
+    setIsbnInput(scannedISBN);
+    handleISBNLookup();
   };
 
   const handleSaveBook = async (bookDataToSave: ManualBookData) => {
@@ -322,6 +330,13 @@ export default function ScanPage() {
 
             {/* Quick Action Buttons */}
             <div className="flex flex-wrap justify-center gap-4 mb-12">
+              <button
+                onClick={() => setShowScanner(true)}
+                className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 flex items-center gap-2"
+              >
+                <Camera className="w-5 h-5" />
+                Scan Barcode
+              </button>
               <button
                 onClick={() => setShowManualForm(true)}
                 className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-blue-500/25 flex items-center gap-2"
@@ -744,6 +759,13 @@ export default function ScanPage() {
           </div>
         </div>
       )}
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScanner
+        isOpen={showScanner}
+        onScan={handleBarcodeScan}
+        onClose={() => setShowScanner(false)}
+      />
     </div>
   </AuthGuard>
   );
