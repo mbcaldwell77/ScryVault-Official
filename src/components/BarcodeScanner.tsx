@@ -18,6 +18,12 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
   const [error, setError] = useState<string | null>(null);
   const [lastScanned, setLastScanned] = useState<string | null>(null);
 
+  // Detect if we're on mobile for optimized settings
+  const isMobile = typeof window !== 'undefined' && (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 768 && window.innerHeight <= 1024)
+  );
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -84,18 +90,18 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
             type: "LiveStream",
             target: scannerRef.current,
             constraints: {
-              width: { min: 640, max: 1280 },
-              height: { min: 480, max: 720 },
-              facingMode: { ideal: "environment" }, // Prefer back camera on mobile
+              width: { min: isMobile ? 480 : 640 },
+              height: { min: isMobile ? 360 : 480 },
+              facingMode: "environment", // Prefer back camera on mobile
               aspectRatio: { min: 1, max: 2 }
             },
           },
           locator: {
-            patchSize: "large",
-            halfSample: false
+            patchSize: isMobile ? "medium" : "large",
+            halfSample: isMobile ? true : false
           },
-          numOfWorkers: navigator.hardwareConcurrency || 2,
-          frequency: 20,
+          numOfWorkers: isMobile ? 1 : (navigator.hardwareConcurrency || 2),
+          frequency: isMobile ? 15 : 20,
           decoder: {
             readers: [
               "ean_reader",
@@ -129,8 +135,8 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
           const cleanCode = code.replace(/[^0-9]/g, '');
 
           // More robust ISBN validation
-          if ((cleanCode.length === 10 || cleanCode.length === 13) && result.codeResult.confidence > 0.7) {
-            console.log('Detected ISBN:', cleanCode, 'Confidence:', result.codeResult.confidence);
+          if (cleanCode.length === 10 || cleanCode.length === 13) {
+            console.log('Detected ISBN:', cleanCode);
             onScan(cleanCode);
             Quagga.stop();
           }
@@ -171,7 +177,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
     };
 
     initializeScanner();
-  }, [isOpen, onScan, lastScanned]);
+  }, [isOpen, onScan, lastScanned, isMobile]);
 
   if (!isOpen) return null;
 
@@ -222,14 +228,14 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
               <div className="relative">
                 <div
                   ref={scannerRef}
-                  className="w-full h-64 bg-black rounded-lg overflow-hidden"
+                  className={`w-full ${isMobile ? 'h-48' : 'h-64'} bg-black rounded-lg overflow-hidden`}
                 />
 
                 {/* Scanning Overlay */}
                 {isInitialized && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="border-2 border-emerald-400 rounded-lg p-2">
-                      <div className="w-48 h-32 border border-emerald-400 rounded"></div>
+                    <div className={`border-2 border-emerald-400 rounded-lg p-2 ${isMobile ? 'scale-75' : ''}`}>
+                      <div className={`${isMobile ? 'w-32 h-20' : 'w-48 h-32'} border border-emerald-400 rounded`}></div>
                     </div>
                   </div>
                 )}

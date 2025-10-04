@@ -177,6 +177,27 @@ export default function ScanPage() {
     }, 500);
   };
 
+  const handleScanBarcodeClick = async () => {
+    // Check if camera is available before showing scanner
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      try {
+        // Try to access camera to see if it's available
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+        // If successful, stop the test stream and show scanner
+        stream.getTracks().forEach(track => track.stop());
+        setShowScanner(true);
+      } catch {
+        // Camera not available, show helpful message
+        setError('Camera not available on this device. Please use manual entry or try on a device with a camera.');
+      }
+    } else {
+      // No camera support at all
+      setError('Camera not supported on this device. Please use manual entry instead.');
+    }
+  };
+
   const handleSaveBook = async (bookDataToSave: ManualBookData) => {
     try {
       setIsLoading(true);
@@ -338,7 +359,7 @@ export default function ScanPage() {
               {/* Quick Action Buttons */}
               <div className="flex flex-wrap justify-center gap-4 mb-12">
                 <button
-                  onClick={() => setShowScanner(true)}
+                  onClick={handleScanBarcodeClick}
                   className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 flex items-center gap-2"
                 >
                   <Camera className="w-5 h-5" />
