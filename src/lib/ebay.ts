@@ -145,6 +145,11 @@ export class EbayAPI {
 
   // Load tokens from database
   private async loadStoredTokens() {
+    // Only run in browser environment
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return
+    }
+
     try {
       // For demo purposes, use a fixed user ID
       const userId = '550e8400-e29b-41d4-a716-446655440000'
@@ -179,8 +184,10 @@ export class EbayAPI {
       }
 
       // Store in localStorage for now (in production, use secure storage)
-      localStorage.setItem(`ebay_tokens_${userId}`, JSON.stringify(tokenData))
-      console.log('✅ eBay tokens stored successfully')
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem(`ebay_tokens_${userId}`, JSON.stringify(tokenData))
+        console.log('✅ eBay tokens stored successfully')
+      }
 
       this.accessToken = tokens.access_token
       this.refreshToken = tokens.refresh_token
@@ -581,7 +588,7 @@ export class EbayAPI {
   async logout(): Promise<void> {
     try {
       const { data: { user } } = await getSupabaseClient().auth.getUser()
-      if (user) {
+      if (user && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
         localStorage.removeItem(`ebay_tokens_${user.id}`)
       }
       this.accessToken = null

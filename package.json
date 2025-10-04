@@ -11,27 +11,27 @@
     "analyze": "ANALYZE=true npm run build"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/supabase-js": "^2.58.0",
     "clsx": "^2.0.0",
     "expo": "^53.0.20",
     "expo-dev-client": "~5.2.4",
-    "lucide-react": "^0.400.0",
+    "lucide-react": "^0.544.0",
     "next": "15.5.2",
     "quagga": "^0.6.16",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "tailwind-merge": "^2.0.0"
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.2",
+    "@tailwindcss/postcss": "^4.1.14",
+    "@types/node": "^24.6.2",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.37.0",
+    "eslint-config-next": "^15.5.4",
     "null-loader": "^4.0.1",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.3"
   }
 }
