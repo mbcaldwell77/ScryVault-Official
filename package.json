@@ -17,7 +17,7 @@
     "expo-dev-client": "~5.2.4",
     "lucide-react": "^0.400.0",
     "next": "15.5.2",
-    "quagga": "^0.12.1",
+    "quagga": "^0.6.16",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "tailwind-merge": "^2.0.0"
