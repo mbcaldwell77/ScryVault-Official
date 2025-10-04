@@ -3,7 +3,7 @@
 import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X, AlertCircle, AlertTriangle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseClient } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import Sidebar from "../components/Sidebar";
@@ -158,9 +158,9 @@ export default function InventoryPage() {
 
   const confirmDelete = async () => {
     if (!bookToDelete) return;
-    
+
     try {
-      const { error } = await supabase
+      const { error } = await getSupabaseClient()
         .from('books')
         .delete()
         .eq('id', bookToDelete.id);
@@ -243,7 +243,7 @@ export default function InventoryPage() {
       const listing = await ebayAPI.publishOffer(offer.offerId)
 
       // Save listing data to database
-      await supabase.from('listings').insert([{
+      await getSupabaseClient().from('listings').insert([{
         book_id: bookData.id,
         user_id: '550e8400-e29b-41d4-a716-446655440000', // Demo user ID
         ebay_item_id: listing.listingId,
@@ -255,7 +255,7 @@ export default function InventoryPage() {
       }])
 
       // Update book status to listed
-      await supabase
+      await getSupabaseClient()
         .from('books')
         .update({
           status: 'listed',
@@ -341,7 +341,7 @@ export default function InventoryPage() {
 
         // Check ISBN with and without hyphens
         const isbnMatch = isbn.includes(searchLower) ||
-                         normalizeISBN(isbn).includes(normalizedSearchISBN);
+          normalizeISBN(isbn).includes(normalizedSearchISBN);
 
         return titleMatch || authorMatch || isbnMatch || publisherMatch;
       });
@@ -357,7 +357,7 @@ export default function InventoryPage() {
       setLoading(true);
 
       // Test connection by fetching categories
-      const { data: categoriesData, error: categoriesError } = await supabase
+      const { data: categoriesData, error: categoriesError } = await getSupabaseClient()
         .from('categories')
         .select('*')
         .order('name');
@@ -367,7 +367,7 @@ export default function InventoryPage() {
       }
 
       // Test fetching books with category information
-      const { data: booksData, error: booksError } = await supabase
+      const { data: booksData, error: booksError } = await getSupabaseClient()
         .from('books')
         .select(`
           *,
@@ -403,16 +403,16 @@ export default function InventoryPage() {
         { name: 'Activity', description: 'Activity books, workbooks, and interactive materials', color: '#059669' }
       ];
 
-             for (const category of missingCategories) {
-         const { error } = await supabase
-           .from('categories')
-           .insert([category]);
+      for (const category of missingCategories) {
+        const { error } = await getSupabaseClient()
+          .from('categories')
+          .insert([category]);
 
-         if (error && !error.message.includes('duplicate key')) {
-           console.error('Error inserting category:', error);
-           throw error;
-         }
-       }
+        if (error && !error.message.includes('duplicate key')) {
+          console.error('Error inserting category:', error);
+          throw error;
+        }
+      }
 
       // Refresh categories after adding
       await fetchData();
@@ -496,96 +496,96 @@ export default function InventoryPage() {
           tags: ["thriller", "psychological", "mystery"],
           status: "draft"
         },
-                 {
-           title: "Educated",
-           authors: ["Tara Westover"],
-           isbn: "978-0-399-59050-4",
-           publisher: "Random House",
-           published_date: "2018-02-20",
-           page_count: 334,
-           language: "English",
-           description: "A memoir about a woman who grows up in a survivalist Mormon family and eventually earns a PhD from Cambridge University.",
-           condition: "very_good",
-           purchase_price: 14.99,
-           asking_price: 28.00,
-           category_id: categories.find((c: Record<string, unknown>) => c.name === 'Biography')?.id as string,
-           tags: ["memoir", "education", "survival"],
-           status: "draft"
-         },
-         {
-           title: "The Catcher in the Rye",
-           authors: ["J.D. Salinger"],
-           isbn: "0316769487",
-           publisher: "Little, Brown and Company",
-           published_date: "1951-07-16",
-           page_count: 277,
-           language: "English",
-           description: "A classic coming-of-age novel about teenage alienation and loss of innocence.",
-           condition: "good",
-           purchase_price: 8.99,
-           asking_price: 18.00,
-           category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fiction')?.id as string,
-           tags: ["classic", "coming-of-age", "american literature"],
-           status: "draft"
-         },
-         {
-           title: "The Hobbit",
-           authors: ["J.R.R. Tolkien"],
-           isbn: "978-0-261-10221-4",
-           publisher: "George Allen & Unwin",
-           published_date: "1937-09-21",
-           page_count: 310,
-           language: "English",
-           description: "A fantasy novel about a hobbit's journey with dwarves to reclaim their homeland.",
-           condition: "very_good",
-           purchase_price: 12.99,
-           asking_price: 45.00,
-           category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fantasy')?.id as string,
-           tags: ["fantasy", "adventure", "classic"],
-           status: "draft"
-         },
-         {
-           title: "Vintage Cookbook Collection",
-           authors: ["Various"],
-           isbn: "978-0-123456-78-9",
-           publisher: "Vintage Press",
-           published_date: "1965-01-01",
-           page_count: 250,
-           language: "English",
-           description: "A collection of vintage recipes from the 1960s.",
-           condition: "acceptable",
-           purchase_price: 5.99,
-           asking_price: 25.00,
-           category_id: categories.find((c: Record<string, unknown>) => c.name === 'Vintage')?.id as string,
-           tags: ["vintage", "cookbook", "recipes"],
-           status: "draft"
-         }
+        {
+          title: "Educated",
+          authors: ["Tara Westover"],
+          isbn: "978-0-399-59050-4",
+          publisher: "Random House",
+          published_date: "2018-02-20",
+          page_count: 334,
+          language: "English",
+          description: "A memoir about a woman who grows up in a survivalist Mormon family and eventually earns a PhD from Cambridge University.",
+          condition: "very_good",
+          purchase_price: 14.99,
+          asking_price: 28.00,
+          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Biography')?.id as string,
+          tags: ["memoir", "education", "survival"],
+          status: "draft"
+        },
+        {
+          title: "The Catcher in the Rye",
+          authors: ["J.D. Salinger"],
+          isbn: "0316769487",
+          publisher: "Little, Brown and Company",
+          published_date: "1951-07-16",
+          page_count: 277,
+          language: "English",
+          description: "A classic coming-of-age novel about teenage alienation and loss of innocence.",
+          condition: "good",
+          purchase_price: 8.99,
+          asking_price: 18.00,
+          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fiction')?.id as string,
+          tags: ["classic", "coming-of-age", "american literature"],
+          status: "draft"
+        },
+        {
+          title: "The Hobbit",
+          authors: ["J.R.R. Tolkien"],
+          isbn: "978-0-261-10221-4",
+          publisher: "George Allen & Unwin",
+          published_date: "1937-09-21",
+          page_count: 310,
+          language: "English",
+          description: "A fantasy novel about a hobbit's journey with dwarves to reclaim their homeland.",
+          condition: "very_good",
+          purchase_price: 12.99,
+          asking_price: 45.00,
+          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fantasy')?.id as string,
+          tags: ["fantasy", "adventure", "classic"],
+          status: "draft"
+        },
+        {
+          title: "Vintage Cookbook Collection",
+          authors: ["Various"],
+          isbn: "978-0-123456-78-9",
+          publisher: "Vintage Press",
+          published_date: "1965-01-01",
+          page_count: 250,
+          language: "English",
+          description: "A collection of vintage recipes from the 1960s.",
+          condition: "acceptable",
+          purchase_price: 5.99,
+          asking_price: 25.00,
+          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Vintage')?.id as string,
+          tags: ["vintage", "cookbook", "recipes"],
+          status: "draft"
+        }
       ];
 
-             for (const book of sampleBooks) {
-         const { error } = await supabase
-           .from('books')
-           .insert([{
-             ...book,
-             user_id: '550e8400-e29b-41d4-a716-446655440000' // Demo user ID
-           }]);
+      for (const book of sampleBooks) {
+        const { error } = await getSupabaseClient()
+          .from('books')
+          .insert([{
+            ...book,
+            user_id: '550e8400-e29b-41d4-a716-446655440000' // Demo user ID
+          }]);
 
-         if (error) {
-           console.error('Error inserting book:', error);
-           throw error;
-         }
-       }
+        if (error) {
+          console.error('Error inserting book:', error);
+          throw error;
+        }
+      }
 
       // Refresh data after adding books
       await fetchData();
 
       showToast('Sample books added successfully! 🎉', 'success');
-         } catch (err: unknown) {
-       console.error('Error adding sample books:', err);
-       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-       setError(`Failed to add sample books: ${errorMessage}`);
-       showToast(`Failed to add sample books: ${errorMessage}`, 'error');
-     } finally {
+    } catch (err: unknown) {
+      console.error('Error adding sample books:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(`Failed to add sample books: ${errorMessage}`);
+      showToast(`Failed to add sample books: ${errorMessage}`, 'error');
+    } finally {
       setLoading(false);
     }
   };
@@ -594,8 +594,8 @@ export default function InventoryPage() {
       <Sidebar />
       <div className="min-h-screen bg-gray-900 lg:pl-64">
         <Header />
-                                     {/* Page Header */}
-           <div className="p-4 lg:p-6 pt-16 lg:pt-6 border-b border-gray-700/50">
+        {/* Page Header */}
+        <div className="p-4 lg:p-6 pt-16 lg:pt-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Inventory</h2>
@@ -652,10 +652,10 @@ export default function InventoryPage() {
           </div>
         </div>
 
-                  {/* Main Content */}
-          <div className="p-4 lg:p-6">
+        {/* Main Content */}
+        <div className="p-4 lg:p-6">
 
-                  {/* eBay Connection Notice */}
+          {/* eBay Connection Notice */}
           {ebayAuthStatus === 'disconnected' && books.length > 0 && (
             <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-4 mb-6">
               <div className="flex items-center space-x-3">
@@ -679,121 +679,121 @@ export default function InventoryPage() {
           )}
 
           {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 mb-8 overflow-hidden">
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-400 text-sm">Total Books</p>
-                <p className="text-2xl lg:text-3xl font-bold text-white">{loading ? '...' : filteredBooks.length}</p>
-              </div>
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                <BookOpen className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-400 text-sm">Categories</p>
-                <p className="text-2xl lg:text-3xl font-bold text-white">{loading ? '...' : categories.length}</p>
-              </div>
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                <Package className="w-5 h-5 lg:w-6 lg:h-6 text-blue-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-400 text-sm">Sold</p>
-                <p className="text-2xl lg:text-3xl font-bold text-white">{loading ? '...' : calculateMetrics(filteredBooks).soldBooks}</p>
-              </div>
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-green-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-400 text-sm">Total Value</p>
-                <p className="text-2xl lg:text-3xl font-bold text-white truncate">${loading ? '...' : calculateMetrics(filteredBooks).totalValue.toFixed(2)}</p>
-              </div>
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-purple-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-400 text-sm">Total Profit</p>
-                <p className="text-2xl lg:text-3xl font-bold text-white truncate">${loading ? '...' : calculateMetrics(filteredBooks).totalProfit.toFixed(2)}</p>
-              </div>
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-cyan-400" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Categories Display */}
-        {!loading && categories.length > 0 && (
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 mb-8">
-            <h3 className="text-lg font-semibold text-white mb-4">Book Categories</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 overflow-hidden">
-              {categories.map((category) => (
-                <div
-                  key={category.id as string}
-                  className="bg-gray-700/30 rounded-lg p-4 text-center border border-gray-600/30"
-                  style={{ borderLeftColor: category.color as string, borderLeftWidth: '4px' }}
-                >
-                  <div
-                    className="w-8 h-8 rounded-lg mx-auto mb-2 flex items-center justify-center text-white text-sm font-bold"
-                    style={{ backgroundColor: category.color as string }}
-                  >
-                    {(category.name as string).charAt(0)}
-                  </div>
-                  <p className="text-white font-medium text-sm">{category.name as string}</p>
-                  <p className="text-gray-400 text-xs mt-1">{category.description as string}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 mb-8 overflow-hidden">
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="text-gray-400 text-sm">Total Books</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-white">{loading ? '...' : filteredBooks.length}</p>
                 </div>
-              ))}
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <BookOpen className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="text-gray-400 text-sm">Categories</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-white">{loading ? '...' : categories.length}</p>
+                </div>
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <Package className="w-5 h-5 lg:w-6 lg:h-6 text-blue-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="text-gray-400 text-sm">Sold</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-white">{loading ? '...' : calculateMetrics(filteredBooks).soldBooks}</p>
+                </div>
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-green-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="text-gray-400 text-sm">Total Value</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-white truncate">${loading ? '...' : calculateMetrics(filteredBooks).totalValue.toFixed(2)}</p>
+                </div>
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-purple-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 min-w-0">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="text-gray-400 text-sm">Total Profit</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-white truncate">${loading ? '...' : calculateMetrics(filteredBooks).totalProfit.toFixed(2)}</p>
+                </div>
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                  <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-cyan-400" />
+                </div>
+              </div>
             </div>
           </div>
-        )}
 
-                 {/* Sample Data Section - Only show in demo mode */}
-         {!loading && books.length === 0 && isDemoMode && (
-           <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6 mb-8">
-             <div className="text-center">
-               <h3 className="text-lg font-semibold text-white mb-2">Add Sample Books</h3>
-               <p className="text-gray-300 mb-4">
-                 Your database is connected! Add some sample books to test the full functionality.
-               </p>
-               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                 <button
-                   onClick={addSampleBooks}
-                   className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-blue-500/25"
-                 >
-                   Add 5 Sample Books 🎉
-                 </button>
-                 <button
-                   onClick={addMissingCategories}
-                   className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg shadow-green-500/25"
-                 >
-                   Add Missing Categories 📚
-                 </button>
-               </div>
-             </div>
-           </div>
-         )}
+          {/* Categories Display */}
+          {!loading && categories.length > 0 && (
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 mb-8">
+              <h3 className="text-lg font-semibold text-white mb-4">Book Categories</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 overflow-hidden">
+                {categories.map((category) => (
+                  <div
+                    key={category.id as string}
+                    className="bg-gray-700/30 rounded-lg p-4 text-center border border-gray-600/30"
+                    style={{ borderLeftColor: category.color as string, borderLeftWidth: '4px' }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg mx-auto mb-2 flex items-center justify-center text-white text-sm font-bold"
+                      style={{ backgroundColor: category.color as string }}
+                    >
+                      {(category.name as string).charAt(0)}
+                    </div>
+                    <p className="text-white font-medium text-sm">{category.name as string}</p>
+                    <p className="text-gray-400 text-xs mt-1">{category.description as string}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-                                              {/* Search and Filters - Moved above inventory */}
-           <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 mb-4 lg:mb-6">
+          {/* Sample Data Section - Only show in demo mode */}
+          {!loading && books.length === 0 && isDemoMode && (
+            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6 mb-8">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-white mb-2">Add Sample Books</h3>
+                <p className="text-gray-300 mb-4">
+                  Your database is connected! Add some sample books to test the full functionality.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={addSampleBooks}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-blue-500/25"
+                  >
+                    Add 5 Sample Books 🎉
+                  </button>
+                  <button
+                    onClick={addMissingCategories}
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg shadow-green-500/25"
+                  >
+                    Add Missing Categories 📚
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Search and Filters - Moved above inventory */}
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 mb-4 lg:mb-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
               <div className="flex-1 max-w-md">
                 <div className="relative">
@@ -808,19 +808,19 @@ export default function InventoryPage() {
                 </div>
               </div>
               <div className="flex space-x-4">
-                <button 
+                <button
                   onClick={toggleAdvancedFilters}
                   className={cn(
                     "flex items-center space-x-2 px-4 py-3 border rounded-lg transition-colors",
-                    showAdvancedFilters 
-                      ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400" 
+                    showAdvancedFilters
+                      ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400"
                       : "bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
                   )}
                 >
                   <Filter className="w-4 h-4" />
                   <span>Advanced Filters</span>
                 </button>
-                <button 
+                <button
                   onClick={resetFilters}
                   className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                 >
@@ -832,7 +832,7 @@ export default function InventoryPage() {
             {/* Advanced Filters Section */}
             {showAdvancedFilters && (
               <div className="mt-6 pt-6 border-t border-gray-700/50">
-                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                   {/* Status Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Status</label>
@@ -944,17 +944,17 @@ export default function InventoryPage() {
                         </button>
                       </span>
                     )}
-                                         {categoryFilter !== 'all' && (
-                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400">
-                         Category: {categories.find(c => c.id === categoryFilter)?.name as string}
-                         <button
-                           onClick={() => setCategoryFilter('all')}
-                           className="ml-1 hover:text-purple-300"
-                         >
-                           ×
-                         </button>
-                       </span>
-                     )}
+                    {categoryFilter !== 'all' && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400">
+                        Category: {categories.find(c => c.id === categoryFilter)?.name as string}
+                        <button
+                          onClick={() => setCategoryFilter('all')}
+                          className="ml-1 hover:text-purple-300"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )}
                     {conditionFilter !== 'all' && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
                         Condition: {conditionFilter}
@@ -994,10 +994,10 @@ export default function InventoryPage() {
             )}
           </div>
 
-         {/* Books Display */}
-         {!loading && filteredBooks.length > 0 && (
-           <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl overflow-hidden mb-8">
-                           <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+          {/* Books Display */}
+          {!loading && filteredBooks.length > 0 && (
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl overflow-hidden mb-8">
+              <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
                 <h3 className="text-lg font-semibold text-white">Your Books</h3>
                 {isDemoMode && (
                   <button
@@ -1008,59 +1008,59 @@ export default function InventoryPage() {
                   </button>
                 )}
               </div>
-                         {/* Mobile/Tablet Card View - Hidden on desktop */}
-             <div className="lg:hidden space-y-4 p-4 lg:p-6">
-               {filteredBooks.map((book) => {
-                 const profit = ((book.asking_price as number) || 0) - ((book.purchase_price as number) || 0);
-                 const profitPercentage = ((book.asking_price as number) || 0) > 0 ? (profit / ((book.asking_price as number) || 0)) * 100 : 0;
-                 
-                 return (
-                   <div key={book.id as string} className="bg-gray-700/30 border border-gray-600/30 rounded-xl p-4">
-                     <div className="flex items-start justify-between mb-3 gap-2">
-                       <div className="flex-1">
-                         <h4 className="font-medium text-white text-sm">{book.title as string}</h4>
-                         <p className="text-gray-400 text-xs">{(book.authors as string[])?.join(', ')}</p>
-                       </div>
-                                               <div className="flex space-x-1 sm:space-x-2 ml-2 sm:ml-3 flex-shrink-0">
-                         <button
-                           onClick={() => handleViewBook(book)}
-                           className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
-                           title="View Details"
-                         >
-                           <Eye className="w-4 h-4" />
-                         </button>
-                         <button
-                           onClick={() => handleEditBook(book)}
-                           className="p-1 text-gray-400 hover:text-gray-300 hover:bg-gray-500/10 rounded transition-colors"
-                           title="Edit Book"
-                         >
-                           <Edit className="w-4 h-4" />
-                         </button>
-                         {(book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
-                           <button
-                             onClick={() => handleEbayListing(book)}
-                             disabled={ebayListingLoading === book.id}
-                             className="p-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded transition-colors disabled:opacity-50"
-                             title="List on eBay"
-                           >
-                             {ebayListingLoading === book.id ? (
-                               <div className="w-4 h-4 border border-orange-400 border-t-transparent rounded-full animate-spin" />
-                             ) : (
-                               <ExternalLink className="w-4 h-4" />
-                             )}
-                           </button>
-                         )}
-                         <button
-                           onClick={() => handleDeleteBook(book)}
-                           className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
-                           title="Delete Book"
-                         >
-                           <Trash2 className="w-4 h-4" />
-                         </button>
-                       </div>
-                     </div>
-                     
-                                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              {/* Mobile/Tablet Card View - Hidden on desktop */}
+              <div className="lg:hidden space-y-4 p-4 lg:p-6">
+                {filteredBooks.map((book) => {
+                  const profit = ((book.asking_price as number) || 0) - ((book.purchase_price as number) || 0);
+                  const profitPercentage = ((book.asking_price as number) || 0) > 0 ? (profit / ((book.asking_price as number) || 0)) * 100 : 0;
+
+                  return (
+                    <div key={book.id as string} className="bg-gray-700/30 border border-gray-600/30 rounded-xl p-4">
+                      <div className="flex items-start justify-between mb-3 gap-2">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-white text-sm">{book.title as string}</h4>
+                          <p className="text-gray-400 text-xs">{(book.authors as string[])?.join(', ')}</p>
+                        </div>
+                        <div className="flex space-x-1 sm:space-x-2 ml-2 sm:ml-3 flex-shrink-0">
+                          <button
+                            onClick={() => handleViewBook(book)}
+                            className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEditBook(book)}
+                            className="p-1 text-gray-400 hover:text-gray-300 hover:bg-gray-500/10 rounded transition-colors"
+                            title="Edit Book"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          {(book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
+                            <button
+                              onClick={() => handleEbayListing(book)}
+                              disabled={ebayListingLoading === book.id}
+                              className="p-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded transition-colors disabled:opacity-50"
+                              title="List on eBay"
+                            >
+                              {ebayListingLoading === book.id ? (
+                                <div className="w-4 h-4 border border-orange-400 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <ExternalLink className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteBook(book)}
+                            className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                            title="Delete Book"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div>
                           <span className="text-gray-400">ISBN:</span>
                           <span className="text-white ml-1">{book.isbn as string}</span>
@@ -1102,7 +1102,7 @@ export default function InventoryPage() {
                           <span className="text-gray-400">COGS:</span>
                           <span className="text-white ml-1">${(book.purchase_price as number)?.toFixed(2)}</span>
                         </div>
-                                                 <div className="col-span-2">
+                        <div className="col-span-2">
                           <span className="text-gray-400">Profit:</span>
                           <span className="text-emerald-400 font-semibold ml-1">${profit.toFixed(2)} ({profitPercentage.toFixed(1)}%)</span>
                         </div>
@@ -1126,211 +1126,211 @@ export default function InventoryPage() {
                           </div>
                         )}
                       </div>
-                   </div>
-                 );
-               })}
-             </div>
+                    </div>
+                  );
+                })}
+              </div>
 
-                           {/* Desktop Table View - Hidden on mobile/tablet */}
+              {/* Desktop Table View - Hidden on mobile/tablet */}
               <div className="hidden lg:block overflow-x-auto relative">
                 {/* Scroll indicator */}
                 <div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-gray-800/50 to-transparent pointer-events-none z-10"></div>
                 <table className="w-full min-w-[1200px]">
-                <thead className="bg-gray-700/30">
-                  <tr>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
-                      onClick={() => handleSort('title')}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Book</span>
-                        {sortField === 'title' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                        ) : (
-                          <ArrowUpDown className="w-3 h-3 opacity-50" />
-                        )}
-                      </div>
-                    </th>
-                                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ISBN</th>
-                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Category</th>
-                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Condition</th>
-                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
-                      onClick={() => handleSort('asking_price')}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>List Price</span>
-                        {sortField === 'asking_price' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                        ) : (
-                          <ArrowUpDown className="w-3 h-3 opacity-50" />
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
-                      onClick={() => handleSort('purchase_price')}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>COGS</span>
-                        {sortField === 'purchase_price' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                        ) : (
-                          <ArrowUpDown className="w-3 h-3 opacity-50" />
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
-                      onClick={() => handleSort('profit')}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Profit</span>
-                        {sortField === 'profit' ? (
-                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                        ) : (
-                          <ArrowUpDown className="w-3 h-3 opacity-50" />
-                        )}
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">eBay Profit</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-40">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700/50">
-                  {filteredBooks.map((book) => (
-                    <tr key={book.id as string}>
-                                             <td className="px-6 py-4">
-                         <div className="text-sm font-medium text-white">{book.title as string}</div>
-                         <div className="text-sm text-gray-400">{(book.authors as string[])?.join(', ')}</div>
-                       </td>
-                       <td className="px-6 py-4 text-gray-300">{book.isbn as string}</td>
-                       <td className="px-6 py-4">
-                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-400">
-                           {categories.find(c => c.id === book.category_id)?.name as string || 'Uncategorized'}
-                         </span>
-                       </td>
-                       <td className="px-6 py-4">
-                         <span className={cn(
-                           "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
-                           (book.condition as string) === "new" && "bg-green-500/20 text-green-400",
-                           (book.condition as string) === "like_new" && "bg-emerald-500/20 text-emerald-400",
-                           (book.condition as string) === "very_good" && "bg-blue-500/20 text-blue-400",
-                           (book.condition as string) === "good" && "bg-yellow-500/20 text-yellow-400",
-                           (book.condition as string) === "acceptable" && "bg-orange-500/20 text-orange-400",
-                           (book.condition as string) === "poor" && "bg-red-500/20 text-red-400"
-                         )}>
-                           {(book.condition as string)?.replace('_', ' ')?.charAt(0).toUpperCase() + (book.condition as string)?.replace('_', ' ')?.slice(1) || 'Unknown'}
-                         </span>
-                       </td>
-                       <td className="px-6 py-4">
-                         <span className={cn(
-                           "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
-                           (book.status as string) === "Listed" && "bg-blue-500/20 text-blue-400",
-                           (book.status as string) === "Sold" && "bg-green-500/20 text-green-400",
-                           (book.status as string) === "draft" && "bg-yellow-500/20 text-yellow-400"
-                         )}>
-                           {(book.status as string)?.charAt(0).toUpperCase() + (book.status as string)?.slice(1)}
-                         </span>
-                       </td>
-                                              <td className="px-6 py-4 text-white">${(book.asking_price as number)?.toFixed(2)}</td>
+                  <thead className="bg-gray-700/30">
+                    <tr>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
+                        onClick={() => handleSort('title')}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Book</span>
+                          {sortField === 'title' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 opacity-50" />
+                          )}
+                        </div>
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ISBN</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Condition</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
+                        onClick={() => handleSort('asking_price')}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>List Price</span>
+                          {sortField === 'asking_price' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 opacity-50" />
+                          )}
+                        </div>
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
+                        onClick={() => handleSort('purchase_price')}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>COGS</span>
+                          {sortField === 'purchase_price' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 opacity-50" />
+                          )}
+                        </div>
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white select-none"
+                        onClick={() => handleSort('profit')}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Profit</span>
+                          {sortField === 'profit' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 opacity-50" />
+                          )}
+                        </div>
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">eBay Profit</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-40">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700/50">
+                    {filteredBooks.map((book) => (
+                      <tr key={book.id as string}>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-white">{book.title as string}</div>
+                          <div className="text-sm text-gray-400">{(book.authors as string[])?.join(', ')}</div>
+                        </td>
+                        <td className="px-6 py-4 text-gray-300">{book.isbn as string}</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-400">
+                            {categories.find(c => c.id === book.category_id)?.name as string || 'Uncategorized'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={cn(
+                            "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                            (book.condition as string) === "new" && "bg-green-500/20 text-green-400",
+                            (book.condition as string) === "like_new" && "bg-emerald-500/20 text-emerald-400",
+                            (book.condition as string) === "very_good" && "bg-blue-500/20 text-blue-400",
+                            (book.condition as string) === "good" && "bg-yellow-500/20 text-yellow-400",
+                            (book.condition as string) === "acceptable" && "bg-orange-500/20 text-orange-400",
+                            (book.condition as string) === "poor" && "bg-red-500/20 text-red-400"
+                          )}>
+                            {(book.condition as string)?.replace('_', ' ')?.charAt(0).toUpperCase() + (book.condition as string)?.replace('_', ' ')?.slice(1) || 'Unknown'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={cn(
+                            "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                            (book.status as string) === "Listed" && "bg-blue-500/20 text-blue-400",
+                            (book.status as string) === "Sold" && "bg-green-500/20 text-green-400",
+                            (book.status as string) === "draft" && "bg-yellow-500/20 text-yellow-400"
+                          )}>
+                            {(book.status as string)?.charAt(0).toUpperCase() + (book.status as string)?.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-white">${(book.asking_price as number)?.toFixed(2)}</td>
                         <td className="px-6 py-4 text-gray-300">${(book.purchase_price as number)?.toFixed(2)}</td>
                         <td className="px-6 py-4">
                           <div className="text-emerald-400 font-semibold">${((book.asking_price as number) - (book.purchase_price as number)).toFixed(2)}</div>
                           <div className="text-emerald-400 text-sm">
                             {Math.round((((book.asking_price as number) - (book.purchase_price as number)) / (book.asking_price as number)) * 100)}%
                           </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {ebayAuthStatus === 'connected' && (book.status as string) === 'draft' ? (() => {
-                          const ebayProfit = calculateProfit(
-                            (book.asking_price as number) || 0,
-                            (book.purchase_price as number) || 0,
-                            3.99 // Standard shipping cost
-                          )
-                          return (
-                            <div className="text-sm">
-                              <div className={`font-semibold ${getProfitColor(ebayProfit.netProfit)}`}>
-                                {formatCurrency(ebayProfit.netProfit)}
+                        </td>
+                        <td className="px-6 py-4">
+                          {ebayAuthStatus === 'connected' && (book.status as string) === 'draft' ? (() => {
+                            const ebayProfit = calculateProfit(
+                              (book.asking_price as number) || 0,
+                              (book.purchase_price as number) || 0,
+                              3.99 // Standard shipping cost
+                            )
+                            return (
+                              <div className="text-sm">
+                                <div className={`font-semibold ${getProfitColor(ebayProfit.netProfit)}`}>
+                                  {formatCurrency(ebayProfit.netProfit)}
+                                </div>
+                                <div className="text-gray-400 text-xs">
+                                  {ebayProfit.profitMargin.toFixed(1)}% margin
+                                </div>
                               </div>
-                              <div className="text-gray-400 text-xs">
-                                {ebayProfit.profitMargin.toFixed(1)}% margin
-                              </div>
-                            </div>
-                          )
-                        })() : (
-                          <span className="text-gray-500 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 w-40">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleViewBook(book)}
-                            className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
-                            title="View Details"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleEditBook(book)}
-                            className="p-1 text-gray-400 hover:text-gray-300 hover:bg-gray-500/10 rounded transition-colors"
-                            title="Edit Book"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          {(book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
-                            <button
-                              onClick={() => handleEbayListing(book)}
-                              disabled={ebayListingLoading === book.id}
-                              className="p-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded transition-colors disabled:opacity-50"
-                              title="List on eBay"
-                            >
-                              {ebayListingLoading === book.id ? (
-                                <div className="w-4 h-4 border border-orange-400 border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                <ExternalLink className="w-4 h-4" />
-                              )}
-                            </button>
+                            )
+                          })() : (
+                            <span className="text-gray-500 text-sm">-</span>
                           )}
-                          <button
-                            onClick={() => handleDeleteBook(book)}
-                            className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
-                            title="Delete Book"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </td>
+                        <td className="px-6 py-4 w-40">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleViewBook(book)}
+                              className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEditBook(book)}
+                              className="p-1 text-gray-400 hover:text-gray-300 hover:bg-gray-500/10 rounded transition-colors"
+                              title="Edit Book"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            {(book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
+                              <button
+                                onClick={() => handleEbayListing(book)}
+                                disabled={ebayListingLoading === book.id}
+                                className="p-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded transition-colors disabled:opacity-50"
+                                title="List on eBay"
+                              >
+                                {ebayListingLoading === book.id ? (
+                                  <div className="w-4 h-4 border border-orange-400 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <ExternalLink className="w-4 h-4" />
+                                )}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteBook(book)}
+                              className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                              title="Delete Book"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+
+
+
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-8">
+            <div className="text-gray-400 text-sm">
+              Showing 1 to 5 of 1,247 results
+            </div>
+            <div className="flex space-x-2">
+              <button className="px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
+                Previous
+              </button>
+              <button className="px-3 py-2 bg-emerald-500 text-white rounded-lg">1</button>
+              <button className="px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">2</button>
+              <button className="px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">3</button>
+              <button className="px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
+                Next
+              </button>
             </div>
           </div>
-        )}
-
-        
-
-
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-8">
-          <div className="text-gray-400 text-sm">
-            Showing 1 to 5 of 1,247 results
-          </div>
-          <div className="flex space-x-2">
-            <button className="px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
-              Previous
-            </button>
-            <button className="px-3 py-2 bg-emerald-500 text-white rounded-lg">1</button>
-            <button className="px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">2</button>
-            <button className="px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">3</button>
-            <button className="px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
-              Next
-            </button>
-          </div>
-        </div>
         </div>
       </div>
 

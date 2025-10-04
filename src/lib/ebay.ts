@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { getSupabaseClient } from './supabase'
 
 // eBay API Configuration
 const EBAY_APP_ID = process.env.NEXT_PUBLIC_EBAY_APP_ID!
@@ -333,7 +333,7 @@ export class EbayAPI {
 
       const tokens: EbayTokenResponse = await response.json()
       console.log('✅ Token exchange successful!')
-      console.log('Tokens received:', { 
+      console.log('Tokens received:', {
         access_token_length: tokens.access_token?.length,
         expires_in: tokens.expires_in,
         token_type: tokens.token_type
@@ -580,7 +580,7 @@ export class EbayAPI {
   // Clear stored tokens (logout)
   async logout(): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getSupabaseClient().auth.getUser()
       if (user) {
         localStorage.removeItem(`ebay_tokens_${user.id}`)
       }

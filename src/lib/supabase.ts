@@ -1,36 +1,57 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  },
-  // Optimize for performance
-  global: {
-    headers: {
-      'X-Client-Info': 'scryvault-web'
-    }
+// Only initialize Supabase client if we're in a browser environment or have the required env vars
+const initSupabase = () => {
+  if (typeof window === 'undefined' && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return null
   }
-})
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    },
+    // Optimize for performance
+    global: {
+      headers: {
+        'X-Client-Info': 'scryvault-web'
+      }
+    }
+  })
+}
+
+export const supabase = initSupabase()
 
 // Google Books API Configuration
 const GOOGLE_BOOKS_API_KEY = process.env.GOOGLE_BOOKS_API_KEY || ''
 const GOOGLE_BOOKS_BASE_URL = 'https://www.googleapis.com/books/v1/volumes'
 
-export const supabaseService = supabase
+export const getSupabaseClient = () => {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized. Make sure environment variables are set.')
+  }
+  return supabase
+}
+export const supabaseService = supabase // Keep for backward compatibility
 
 // Auth helpers
 export const getCurrentUser = async () => {
+  if (!supabase) throw new Error('Supabase client not initialized')
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error) throw error
   return user
 }
 
 export const signUp = async (email: string, password: string) => {
+  if (!supabase) throw new Error('Supabase client not initialized')
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -40,6 +61,7 @@ export const signUp = async (email: string, password: string) => {
 }
 
 export const signIn = async (email: string, password: string) => {
+  if (!supabase) throw new Error('Supabase client not initialized')
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -49,6 +71,7 @@ export const signIn = async (email: string, password: string) => {
 }
 
 export const signOut = async () => {
+  if (!supabase) throw new Error('Supabase client not initialized')
   const { error } = await supabase.auth.signOut()
   if (error) throw error
 }

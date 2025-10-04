@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Sparkles, Search, Upload, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2, Camera } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { lookupBookByISBN, validateISBN, BookData, supabaseService } from "@/lib/supabase";
+import { lookupBookByISBN, validateISBN, BookData, getSupabaseClient } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import Sidebar from "../components/Sidebar";
@@ -71,7 +71,7 @@ export default function ScanPage() {
 
   const loadRecentBooks = async () => {
     try {
-      const { data, error } = await supabaseService
+      const { data, error } = await getSupabaseClient()
         .from('books')
         .select('*')
         .eq('user_id', '550e8400-e29b-41d4-a716-446655440000') // Demo user ID
@@ -91,7 +91,7 @@ export default function ScanPage() {
 
   const loadCategories = async () => {
     try {
-      const { data, error } = await supabaseService
+      const { data, error } = await getSupabaseClient()
         .from('categories')
         .select('*')
         .order('name');
@@ -203,7 +203,7 @@ export default function ScanPage() {
       setIsLoading(true);
       setError(null);
 
-      const { error } = await supabaseService
+      const { error } = await getSupabaseClient()
         .from('books')
         .insert([{
           user_id: '550e8400-e29b-41d4-a716-446655440000', // TEMP: Demo user ID - data persistence fixed with disabled RLS
