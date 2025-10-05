@@ -1,8 +1,8 @@
 # ScryVault - Scan-to-Live Book Management Platform
 
-## 🚀 **Current Status: Mobile UI Overhaul Complete!**
+## 🚀 **Current Status: Ready for eBay Integration!**
 
-ScryVault is a comprehensive book inventory management platform designed for book sellers, collectors, and resellers. The platform provides a **native mobile experience** essential for barcode scanning workflows, with seamless desktop functionality for inventory management and analytics.
+ScryVault is a comprehensive book inventory management platform designed for book sellers, collectors, and resellers. The platform provides a **native mobile experience** with fast manual ISBN entry and seamless desktop functionality for inventory management and analytics.
 
 ## ✨ **Key Features**
 
@@ -69,10 +69,16 @@ ScryVault is a comprehensive book inventory management platform designed for boo
 ## 📱 **Mobile Experience**
 
 ### **Responsive Design**
-- **Mobile-First**: Designed for mobile barcode scanning workflows
+- **Mobile-First**: Designed for fast book entry workflows
 - **Touch Optimized**: Proper touch targets and spacing
 - **Smooth Animations**: Hardware-accelerated transitions
 - **Intuitive Navigation**: Collapsible sidebar with overlay
+
+### **Book Entry**
+- **Manual ISBN Entry**: Fast, reliable manual entry (5 seconds to type 13 digits)
+- **Automatic Lookup**: Google Books API fetches all book details automatically
+- **Mobile Optimized**: Large input fields and buttons for easy mobile use
+- **Universal**: Works on all devices and browsers, no permissions needed
 
 ### **Layout System**
 - **Unified Padding**: Consistent spacing across all pages
@@ -85,6 +91,17 @@ ScryVault is a comprehensive book inventory management platform designed for boo
 - **Smooth Interactions**: 60fps animations and transitions
 - **Memory Efficient**: Optimized component rendering
 - **Touch Responsive**: Immediate feedback on interactions
+
+### **⚠️ Barcode Scanning Note**
+Web-based barcode scanning is **not currently supported** due to browser limitations:
+- Poor camera quality and autofocus via WebRTC
+- Unreliable detection accuracy on mobile browsers
+- Inconsistent performance across devices
+
+**Recommended alternatives:**
+- **Manual entry** (current method): Fast, reliable, works everywhere
+- **Native mobile app** (future): React Native with ML Kit for professional barcode scanning
+- **Photo upload** (potential): Server-side OCR processing
 
 ## 🚀 **Getting Started**
 
@@ -233,10 +250,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🎉 **Session 2 Summary**
+## 🎉 **Recent Updates**
 
-**Mobile UI Overhaul Complete!** The app now provides a **native mobile experience** that's essential for barcode scanning workflows. All major UI responsiveness issues have been resolved, and the app is ready for the next phase of development: **eBay integration**.
+### **Session 3: Barcode Scanner Investigation**
+Investigated web-based barcode scanning and concluded it's not viable for production. Simplified UI to focus on fast, reliable manual ISBN entry which works better than fighting with browser camera limitations.
 
-**The mobile experience is now as beautiful and intuitive as any native mobile app!** 📱✨
+### **Session 2: Mobile UI Overhaul**
+Complete mobile UI overhaul with native mobile experience. All responsiveness issues resolved and layout system unified across all pages.
 
-**Ready for the next phase: eBay integration and marketplace connectivity!** 🚀
+**Current Focus: eBay integration and marketplace connectivity!** 🚀
