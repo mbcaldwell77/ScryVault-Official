@@ -164,8 +164,8 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
             type: "LiveStream",
             target: scannerRef.current,
             constraints: {
-              width: { min: isMobile ? 480 : 640 },
-              height: { min: isMobile ? 360 : 480 },
+              width: { min: 640, ideal: isMobile ? 1280 : 1920, max: 1920 },
+              height: { min: 480, ideal: isMobile ? 720 : 1080, max: 1080 },
               facingMode: "environment",
               aspectRatio: { min: 1, max: 2 }
             },
@@ -174,8 +174,8 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
             patchSize: isMobile ? "medium" : "large",
             halfSample: isMobile ? true : false
           },
-          numOfWorkers: isMobile ? 1 : (navigator.hardwareConcurrency || 2),
-          frequency: isMobile ? 15 : 20,
+          numOfWorkers: isMobile ? 2 : (navigator.hardwareConcurrency || 4),
+          frequency: isMobile ? 10 : 10,
           decoder: {
             readers: [
               "ean_reader",
@@ -238,8 +238,8 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-800 border border-gray-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-gray-800 border border-gray-700 rounded-xl max-w-3xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <div className="flex items-center space-x-3">
@@ -323,14 +323,14 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
               <div className="relative">
                 <div
                   ref={scannerRef}
-                  className={`w-full ${isMobile ? 'h-48' : 'h-64'} bg-black rounded-lg overflow-hidden`}
+                  className={`w-full ${isMobile ? 'h-[400px] sm:h-[500px]' : 'h-[480px]'} bg-black rounded-lg overflow-hidden`}
                 />
 
                 {/* Scanning Overlay */}
                 {isInitialized && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className={`border-2 border-emerald-400 rounded-lg p-2 ${isMobile ? 'scale-75' : ''}`}>
-                      <div className={`${isMobile ? 'w-32 h-20' : 'w-48 h-32'} border border-emerald-400 rounded`}></div>
+                    <div className="border-2 border-emerald-400 rounded-lg p-3">
+                      <div className={`${isMobile ? 'w-56 h-32' : 'w-80 h-48'} border-2 border-emerald-400 rounded`}></div>
                     </div>
                   </div>
                 )}
