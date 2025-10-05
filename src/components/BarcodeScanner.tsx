@@ -50,15 +50,31 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
 
         // Ensure camera access (prompts user if needed)
         const ensureCameraAccess = async (): Promise<boolean> => {
-          if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-            setError('Camera API not supported in this browser.');
+          // Log browser info for debugging
+          console.log('Browser info:', {
+            userAgent: navigator.userAgent,
+            hasNavigator: typeof navigator !== 'undefined',
+            hasMediaDevices: typeof navigator !== 'undefined' && 'mediaDevices' in navigator,
+            hasGetUserMedia: typeof navigator !== 'undefined' && navigator.mediaDevices && 'getUserMedia' in navigator.mediaDevices,
+            protocol: window.location.protocol,
+            hostname: window.location.hostname
+          });
+
+          if (typeof navigator === 'undefined') {
+            setError('Navigator API not available.');
             setNoCameraAvailable(true);
             return false;
           }
 
           // Check if running on HTTPS (required for camera access in production)
-          if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+          if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
             setError('Camera access requires HTTPS. Please use a secure connection.');
+            return false;
+          }
+
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            setError('Camera API not supported in this browser. Please try Chrome, Safari, or Firefox.');
+            setNoCameraAvailable(true);
             return false;
           }
 
