@@ -348,6 +348,7 @@ export type Database = {
         Row: {
           id: string
           user_id: string
+          is_demo: boolean
           title: string
           authors: string[]
           isbn: string | null
@@ -376,6 +377,7 @@ export type Database = {
         Insert: {
           id?: string
           user_id: string
+          is_demo?: boolean
           title: string
           authors?: string[]
           isbn?: string | null
@@ -404,6 +406,7 @@ export type Database = {
         Update: {
           id?: string
           user_id?: string
+          is_demo?: boolean
           title?: string
           authors?: string[]
           isbn?: string | null

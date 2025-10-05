@@ -209,29 +209,68 @@ export default function ScanPage() {
       setIsLoading(true);
       setError(null);
 
-      const { error } = await getSupabaseClient()
+      // Use demo user ID if in demo mode, otherwise use authenticated user ID
+      const userId = isDemoMode ? '358c3277-8f08-4ee1-a839-b660b9155ec2' : user?.id;
+
+      console.log('Debug info:', {
+        isDemoMode,
+        user: user,
+        userId,
+        userFromAuth: user?.id,
+        userEmail: user?.email,
+        userAud: user?.aud
+      });
+
+      // Test Supabase auth
+      const supabase = getSupabaseClient();
+      const { data: { user: supabaseUser }, error: authError } = await supabase.auth.getUser();
+      console.log('Supabase auth check:', { supabaseUser, authError });
+
+      if (!userId) {
+        setError('User not authenticated. Please sign in or enable demo mode.');
+        return;
+      }
+
+      const bookData = {
+        user_id: userId,
+        is_demo: isDemoMode, // Add demo flag
+        title: bookDataToSave.title,
+        authors: bookDataToSave.authors,
+        isbn: bookDataToSave.isbn,
+        isbn13: bookDataToSave.isbn13 || null,
+        publisher: bookDataToSave.publisher || null,
+        published_date: (bookDataToSave.publishedDate && bookDataToSave.publishedDate.trim() !== '') ? bookDataToSave.publishedDate : null,
+        page_count: bookDataToSave.pageCount || null,
+        description: bookDataToSave.description || null,
+        category_id: bookDataToSave.category_id || null,
+        condition: bookDataToSave.condition || 'good',
+        condition_notes: bookDataToSave.condition_notes || null,
+        purchase_price: bookDataToSave.purchasePrice || null,
+        asking_price: bookDataToSave.askingPrice || null,
+        status: 'draft'
+      };
+
+      console.log('Attempting to insert book data:', bookData);
+
+      const { data, error } = await getSupabaseClient()
         .from('books')
-        .insert([{
-          user_id: user?.id, // Use current user ID
-          title: bookDataToSave.title,
-          authors: bookDataToSave.authors,
-          isbn: bookDataToSave.isbn,
-          isbn13: bookDataToSave.isbn13 || null,
-          publisher: bookDataToSave.publisher || null,
-          published_date: (bookDataToSave.publishedDate && bookDataToSave.publishedDate.trim() !== '') ? bookDataToSave.publishedDate : null,
-          page_count: bookDataToSave.pageCount || null,
-          description: bookDataToSave.description || null,
-          category_id: bookDataToSave.category_id || null,
-          condition: bookDataToSave.condition || 'good',
-          condition_notes: bookDataToSave.condition_notes || null,
-          purchase_price: bookDataToSave.purchasePrice || null,
-          asking_price: bookDataToSave.askingPrice || null,
-          status: 'draft'
-        }]);
+        .insert([bookData])
+        .select();
+
+      console.log('Insert result:', { data, error });
 
       if (error) {
         console.error('Error saving book:', error);
-        setError(`Failed to save book: ${error.message}`);
+        console.error('Error type:', typeof error);
+        console.error('Error keys:', Object.keys(error));
+        console.error('Full error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          error: error
+        });
+        setError(`Failed to save book: ${error.message || 'Unknown error'}`);
         return;
       }
 

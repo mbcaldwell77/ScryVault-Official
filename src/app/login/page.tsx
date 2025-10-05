@@ -124,7 +124,7 @@ export default function LoginPage() {
               </Link>
             </p>
             <p className="text-gray-400 text-sm">
-              <Link href="/demo" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+              <Link href="/scan" className="text-cyan-400 hover:text-cyan-300 transition-colors">
                 Try Demo Mode
               </Link>
             </p>

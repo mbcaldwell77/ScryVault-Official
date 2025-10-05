@@ -268,7 +268,7 @@ export default function InventoryPage() {
       // Then insert to listings table as before
       await getSupabaseClient().from('listings').insert([{
         book_id: bookData.id,
-        user_id: '550e8400-e29b-41d4-a716-446655440000', // Demo user ID
+        user_id: '358c3277-8f08-4ee1-a839-b660b9155ec2', // Demo user ID
         ebay_item_id: publish.listingId,
         title: generateEbayListingTitle(bookData),
         description: bookData.description || `${bookData.title} by ${bookData.authors?.join(', ') || 'Unknown Author'}`,
