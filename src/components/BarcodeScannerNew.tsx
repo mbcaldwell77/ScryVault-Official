@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Camera, AlertCircle, Edit3, RotateCcw } from 'lucide-react';
 
 interface BarcodeScannerProps {
@@ -58,7 +58,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
                         facingMode: { ideal: 'environment' },
                         width: { ideal: 1280 },
                         height: { ideal: 720 },
-                        // @ts-ignore - focusMode is not in TS types but works on some devices
+                        // @ts-expect-error - focusMode is not in TS types but works on some devices
                         focusMode: 'continuous'
                     }
                 });
@@ -112,13 +112,14 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
             isMounted = false;
             cleanup();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, useBarcodeDetector]);
 
-    const startBarcodeDetectorScanning = async () => {
+    const startBarcodeDetectorScanning = useCallback(async () => {
         if (!videoRef.current || scanningRef.current) return;
 
         try {
-            // @ts-ignore - BarcodeDetector is not yet in TypeScript types
+            // @ts-expect-error - BarcodeDetector is not yet in TypeScript types
             const barcodeDetector = new window.BarcodeDetector({
                 formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
             });
@@ -153,9 +154,10 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
             addDebug('❌ BarcodeDetector failed, falling back to Quagga2');
             startQuaggaScanning();
         }
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    const startQuaggaScanning = async () => {
+    const startQuaggaScanning = useCallback(async () => {
         if (!videoRef.current || scanningRef.current) return;
 
         try {
@@ -209,9 +211,10 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
             setError('Failed to load barcode scanner library.');
             addDebug(`❌ Quagga load failed`);
         }
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    const handleBarcodeDetected = (code: string) => {
+    const handleBarcodeDetected = useCallback((code: string) => {
         // Clean the code (remove non-numeric characters)
         let cleanCode = code.replace(/[^0-9]/g, '');
 
@@ -228,16 +231,17 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
         } else {
             addDebug(`❌ Invalid length: ${cleanCode.length}`);
         }
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    const pauseScanning = () => {
+    const pauseScanning = useCallback(() => {
         scanningRef.current = false;
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
         }
-    };
+    }, []);
 
-    const resumeScanning = () => {
+    const resumeScanning = useCallback(() => {
         setDetectedCode('');
         if (useBarcodeDetector) {
             startBarcodeDetectorScanning();
@@ -245,7 +249,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
             // Quagga restarts automatically if already initialized
             scanningRef.current = true;
         }
-    };
+    }, [useBarcodeDetector, startBarcodeDetectorScanning]);
 
     const handleUseCode = () => {
         if (detectedCode) {

@@ -210,16 +210,11 @@ export default function ScanPage() {
   const handleBarcodeScan = (scannedISBN: string) => {
     setShowScanner(false);
     setIsbnInput(scannedISBN);
+    setIsbnValid(true);
     // Add a small delay to show the user what was scanned
     setTimeout(() => {
       handleISBNLookup();
     }, 500);
-  };
-
-  const handleScanBarcodeClick = () => {
-    // Simply show the scanner - it will handle camera access and errors internally
-    setError(null);
-    setShowScanner(true);
   };
 
   const handleSaveBook = async (bookDataToSave: ManualBookData) => {
