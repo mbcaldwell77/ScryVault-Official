@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sparkles, Search, Upload, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2, Camera } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -44,6 +44,8 @@ export default function ScanPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showToastState, setShowToastState] = useState(false);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [isbnValid, setIsbnValid] = useState<boolean | null>(null);
+  const isbnInputRef = useRef<HTMLInputElement>(null);
   const [manualBookData, setManualBookData] = useState<ManualBookData>({
     title: '',
     authors: [],
@@ -62,6 +64,15 @@ export default function ScanPage() {
 
   const { user } = useAuth()
   const isDemoMode = !user && typeof window !== 'undefined' && localStorage.getItem('scryvault_demo_mode') === 'true'
+
+  // Auto-focus ISBN input on page load
+  useEffect(() => {
+    // Small delay to ensure page is fully rendered
+    const timer = setTimeout(() => {
+      isbnInputRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Load recent books and categories on component mount
   useEffect(() => {
@@ -107,6 +118,33 @@ export default function ScanPage() {
     }
   };
 
+  // Real-time ISBN validation
+  const handleISBNChange = (value: string) => {
+    setIsbnInput(value);
+    setError(null);
+
+    // Clear validation if empty
+    if (!value.trim()) {
+      setIsbnValid(null);
+      return;
+    }
+
+    // Validate as user types (but only if they've entered enough characters)
+    const cleanValue = value.replace(/[^0-9]/g, '');
+    if (cleanValue.length >= 10) {
+      setIsbnValid(validateISBN(value));
+    } else {
+      setIsbnValid(null);
+    }
+  };
+
+  const clearISBN = () => {
+    setIsbnInput('');
+    setIsbnValid(null);
+    setError(null);
+    isbnInputRef.current?.focus();
+  };
+
   const handleISBNLookup = async () => {
     if (!isbnInput.trim()) {
       setError('Please enter an ISBN');
@@ -115,6 +153,7 @@ export default function ScanPage() {
 
     if (!validateISBN(isbnInput)) {
       setError('Please enter a valid ISBN (10 or 13 digits)');
+      setIsbnValid(false);
       return;
     }
 
@@ -216,6 +255,7 @@ export default function ScanPage() {
 
       // Success! Reset form and reload recent books
       setIsbnInput('');
+      setIsbnValid(null);
       setBookData(null);
       setShowManualForm(false);
       setShowPreview(false);
@@ -236,7 +276,12 @@ export default function ScanPage() {
       });
 
       await loadRecentBooks();
-      showToast(`Book "${bookDataToSave.title}" has been added to your inventory!`, 'success');
+      showToast(`"${bookDataToSave.title}" added successfully! ${bookDataToSave.isbn ? `ISBN: ${bookDataToSave.isbn}` : ''}`, 'success');
+
+      // Re-focus ISBN input for fast consecutive entries
+      setTimeout(() => {
+        isbnInputRef.current?.focus();
+      }, 500);
 
     } catch (error) {
       console.error('Error saving book:', error);
@@ -268,6 +313,7 @@ export default function ScanPage() {
 
   const resetForm = () => {
     setIsbnInput('');
+    setIsbnValid(null);
     setBookData(null);
     setShowManualForm(false);
     setShowPreview(false);
@@ -342,20 +388,45 @@ export default function ScanPage() {
               </div>
 
               {/* Quick Action Buttons */}
-              <div className="flex flex-wrap justify-center gap-4 mb-12">
+              <div className="flex flex-wrap justify-center gap-4 mb-8">
                 <button
-                  onClick={() => setShowManualForm(true)}
+                  onClick={() => isbnInputRef.current?.focus()}
                   className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-4 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 flex items-center gap-2 text-lg"
                 >
                   <Search className="w-6 h-6" />
-                  Add Book
+                  Add Book with ISBN
+                </button>
+                <button
+                  onClick={() => {
+                    resetForm();
+                    setShowManualForm(true);
+                  }}
+                  className="bg-gray-700 hover:bg-gray-600 text-white px-8 py-4 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-lg border border-gray-600"
+                >
+                  <BookOpen className="w-6 h-6" />
+                  Add Without ISBN
                 </button>
               </div>
 
-              {/* Removed barcode scanner - manual entry is more reliable */}
-              <p className="text-center text-gray-400 text-sm mb-8">
-                Enter the ISBN number to look up book details automatically
-              </p>
+              {/* Info boxes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 text-center">
+                  <p className="text-emerald-400 text-sm font-medium mb-1">
+                    Books with ISBN
+                  </p>
+                  <p className="text-gray-400 text-xs">
+                    Most books from 1970+ • Auto-fills all details
+                  </p>
+                </div>
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-center">
+                  <p className="text-amber-400 text-sm font-medium mb-1">
+                    Vintage & Specialty Books
+                  </p>
+                  <p className="text-gray-400 text-xs">
+                    Pre-1970 books, rare editions • Manual entry
+                  </p>
+                </div>
+              </div>
 
               {/* ISBN Input Section */}
               <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-8 mb-6 lg:mb-8">
@@ -363,15 +434,64 @@ export default function ScanPage() {
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Enter ISBN Number
+                      <span className="text-gray-500 ml-2 text-xs font-normal">
+                        (10 or 13 digits)
+                      </span>
                     </label>
-                    <input
-                      type="text"
-                      value={isbnInput}
-                      onChange={(e) => setIsbnInput(e.target.value)}
-                      placeholder="978-0-123456-78-9 or 0123456789"
-                      className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                      onKeyPress={(e) => e.key === 'Enter' && handleISBNLookup()}
-                    />
+                    <div className="relative">
+                      <input
+                        ref={isbnInputRef}
+                        type="text"
+                        inputMode="numeric"
+                        value={isbnInput}
+                        onChange={(e) => handleISBNChange(e.target.value)}
+                        placeholder="978-0-123456-78-9 or 0123456789"
+                        className={cn(
+                          "w-full px-4 py-3 pr-20 bg-gray-700/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all",
+                          isbnValid === true && "border-emerald-500 focus:ring-1 focus:ring-emerald-500",
+                          isbnValid === false && "border-red-500 focus:ring-1 focus:ring-red-500",
+                          isbnValid === null && "border-gray-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        )}
+                        onKeyPress={(e) => e.key === 'Enter' && handleISBNLookup()}
+                      />
+
+                      {/* Validation indicator & Clear button */}
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        {isbnValid === true && (
+                          <Check className="w-5 h-5 text-emerald-400" />
+                        )}
+                        {isbnValid === false && (
+                          <AlertCircle className="w-5 h-5 text-red-400" />
+                        )}
+                        {isbnInput && (
+                          <button
+                            onClick={clearISBN}
+                            className="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-gray-600"
+                            aria-label="Clear ISBN"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Helpful hints */}
+                    {!error && !isbnInput && (
+                      <div className="flex items-center mt-2 text-gray-400 text-xs">
+                        <span className="mr-2">💡</span>
+                        <span>Type ISBN and press <kbd className="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-xs">Enter</kbd> or click Look Up</span>
+                      </div>
+                    )}
+
+                    {/* Validation feedback */}
+                    {isbnValid === true && !error && (
+                      <div className="flex items-center mt-2 text-emerald-400 text-sm">
+                        <Check className="w-4 h-4 mr-1" />
+                        Valid ISBN format
+                      </div>
+                    )}
+
+                    {/* Error message */}
                     {error && (
                       <div className="flex items-center mt-2 text-red-400 text-sm">
                         <AlertCircle className="w-4 h-4 mr-1" />
@@ -382,7 +502,7 @@ export default function ScanPage() {
                   <div className="flex items-end">
                     <button
                       onClick={handleISBNLookup}
-                      disabled={isLoading}
+                      disabled={isLoading || !isbnInput.trim()}
                       className="w-full lg:w-auto bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 lg:px-8 py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       {isLoading ? (
