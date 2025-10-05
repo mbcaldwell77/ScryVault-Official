@@ -1,3 +1,5 @@
+"use client";
+
 import { BookOpen, Camera, TrendingUp } from "lucide-react";
 import Link from "next/link";
 

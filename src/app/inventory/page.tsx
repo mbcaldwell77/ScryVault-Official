@@ -8,6 +8,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { demoStorage } from "@/lib/demo-storage";
 import { ebayAPI, generateEbayListingTitle, calculateProfit, formatCurrency, getProfitColor } from "@/lib/ebay";
 
 // Note: Sidebar component removed in favor of Header for authentication
@@ -379,38 +380,59 @@ export default function InventoryPage() {
     try {
       setLoading(true);
 
-      // Test connection by fetching categories
-      const { data: categoriesData, error: categoriesError } = await getSupabaseClient()
-        .from('categories')
-        .select('*')
-        .order('name');
+      if (isDemoMode) {
+        // In demo mode, load from demo storage
+        const demoData = await demoStorage.getData();
+        setCategories(demoData.categories);
+        setBooks(demoData.books);
+        setFilteredBooks(demoData.books);
+        setError(null);
+        console.log('Loaded demo data:', { categories: demoData.categories.length, books: demoData.books.length });
+      } else {
+        // For real users, load from database
+        if (!user?.id) {
+          setError('User not authenticated');
+          setCategories([]);
+          setBooks([]);
+          setFilteredBooks([]);
+          return;
+        }
 
-      if (categoriesError) {
-        throw categoriesError;
+        // Test connection by fetching categories
+        const { data: categoriesData, error: categoriesError } = await getSupabaseClient()
+          .from('categories')
+          .select('*')
+          .order('name');
+
+        if (categoriesError) {
+          throw categoriesError;
+        }
+
+        // Test fetching books with category information for the authenticated user
+        const { data: booksData, error: booksError } = await getSupabaseClient()
+          .from('books')
+          .select(`
+            *,
+            categories (
+              name,
+              color
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (booksError) {
+          throw booksError;
+        }
+
+        setCategories(categoriesData || []);
+        setBooks(booksData || []);
+        setFilteredBooks(booksData || []);
+        setError(null);
+        console.log('Loaded user data:', { categories: categoriesData?.length || 0, books: booksData?.length || 0 });
       }
-
-      // Test fetching books with category information
-      const { data: booksData, error: booksError } = await getSupabaseClient()
-        .from('books')
-        .select(`
-          *,
-          categories (
-            name,
-            color
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (booksError) {
-        throw booksError;
-      }
-
-      setCategories(categoriesData || []);
-      setBooks(booksData || []);
-      setFilteredBooks(booksData || []);
-      setError(null);
     } catch (err: unknown) {
-      console.error('Supabase connection error:', err);
+      console.error('Error fetching data:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
@@ -426,20 +448,38 @@ export default function InventoryPage() {
         { name: 'Activity', description: 'Activity books, workbooks, and interactive materials', color: '#059669' }
       ];
 
-      for (const category of missingCategories) {
-        const { error } = await getSupabaseClient()
-          .from('categories')
-          .insert([category]);
+      if (isDemoMode) {
+        // In demo mode, add categories to demo storage
+        const currentData = await demoStorage.getData();
+        const existingCategoryNames = currentData.categories.map((c: any) => c.name);
 
-        if (error && !error.message.includes('duplicate key')) {
-          console.error('Error inserting category:', error);
-          throw error;
+        for (const category of missingCategories) {
+          if (!existingCategoryNames.includes(category.name)) {
+            demoStorage.updateData({
+              categories: [...currentData.categories, category]
+            });
+          }
         }
+
+        showToast('Missing categories added to demo storage!', 'success');
+      } else {
+        // For real users, add to database
+        for (const category of missingCategories) {
+          const { error } = await getSupabaseClient()
+            .from('categories')
+            .insert([category]);
+
+          if (error && !error.message.includes('duplicate key')) {
+            console.error('Error inserting category:', error);
+            throw error;
+          }
+        }
+
+        showToast('Missing categories added successfully!', 'success');
       }
 
       // Refresh categories after adding
       await fetchData();
-      showToast('Missing categories added successfully!', 'success');
     } catch (err) {
       console.error('Error adding missing categories:', err);
       showToast('Failed to add missing categories', 'error');
@@ -450,159 +490,188 @@ export default function InventoryPage() {
     try {
       setLoading(true);
 
-      // TEMPORARY: Using demo user ID for personal use
-      // Data persistence fixed by disabling RLS in database
-      // TODO: Replace with proper user authentication before production/multi-user use
+      if (isDemoMode) {
+        // In demo mode, add sample books to demo storage
+        const sampleBooks = [
+          {
+            title: "The Great Gatsby",
+            authors: ["F. Scott Fitzgerald"],
+            isbn: "978-0-7432-7356-5",
+            publisher: "Scribner",
+            published_date: "1925-04-10",
+            page_count: 180,
+            language: "English",
+            description: "A classic American novel set in the Jazz Age on Long Island.",
+            condition: "very_good",
+            purchase_price: 15.99,
+            asking_price: 25.00,
+            category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fiction')?.id as string,
+            tags: ["classic", "american literature", "jazz age"],
+            status: "draft"
+          },
+          {
+            title: "Sapiens: A Brief History of Humankind",
+            authors: ["Yuval Noah Harari"],
+            isbn: "978-0-06-231609-7",
+            publisher: "Harper",
+            published_date: "2014-01-01",
+            page_count: 443,
+            language: "English",
+            description: "A sweeping narrative of human history from the Stone Age to the modern age.",
+            condition: "like_new",
+            purchase_price: 18.99,
+            asking_price: 35.00,
+            category_id: categories.find((c: Record<string, unknown>) => c.name === 'Non-Fiction')?.id as string,
+            tags: ["history", "anthropology", "bestseller"],
+            status: "draft"
+          },
+          {
+            title: "Dune",
+            authors: ["Frank Herbert"],
+            isbn: "978-0-441-17271-9",
+            publisher: "Chilton Books",
+            published_date: "1965-01-01",
+            page_count: 688,
+            language: "English",
+            description: "Epic science fiction novel set on the desert planet Arrakis.",
+            condition: "good",
+            purchase_price: 12.99,
+            asking_price: 40.00,
+            category_id: categories.find((c: Record<string, unknown>) => c.name === 'Science Fiction')?.id as string,
+            tags: ["sci-fi", "space opera", "desert planet"],
+            status: "draft"
+          },
+          {
+            title: "The Silent Patient",
+            authors: ["Alex Michaelides"],
+            isbn: "978-1-250-30169-7",
+            publisher: "Celadon Books",
+            published_date: "2019-02-05",
+            page_count: 336,
+            language: "English",
+            description: "A psychological thriller about a woman who refuses to speak after allegedly murdering her husband.",
+            condition: "new",
+            purchase_price: 16.99,
+            asking_price: 22.00,
+            category_id: categories.find((c: Record<string, unknown>) => c.name === 'Mystery')?.id as string,
+            tags: ["thriller", "psychological", "mystery"],
+            status: "draft"
+          },
+          {
+            title: "Educated",
+            authors: ["Tara Westover"],
+            isbn: "978-0-399-59050-4",
+            publisher: "Random House",
+            published_date: "2018-02-20",
+            page_count: 334,
+            language: "English",
+            description: "A memoir about a woman who grows up in a survivalist Mormon family and eventually earns a PhD from Cambridge University.",
+            condition: "very_good",
+            purchase_price: 14.99,
+            asking_price: 28.00,
+            category_id: categories.find((c: Record<string, unknown>) => c.name === 'Biography')?.id as string,
+            tags: ["memoir", "education", "survival"],
+            status: "draft"
+          },
+          {
+            title: "The Catcher in the Rye",
+            authors: ["J.D. Salinger"],
+            isbn: "0316769487",
+            publisher: "Little, Brown and Company",
+            published_date: "1951-07-16",
+            page_count: 277,
+            language: "English",
+            description: "A classic coming-of-age novel about teenage alienation and loss of innocence.",
+            condition: "good",
+            purchase_price: 8.99,
+            asking_price: 18.00,
+            category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fiction')?.id as string,
+            tags: ["classic", "coming-of-age", "american literature"],
+            status: "draft"
+          },
+          {
+            title: "The Hobbit",
+            authors: ["J.R.R. Tolkien"],
+            isbn: "978-0-261-10221-4",
+            publisher: "George Allen & Unwin",
+            published_date: "1937-09-21",
+            page_count: 310,
+            language: "English",
+            description: "A fantasy novel about a hobbit's journey with dwarves to reclaim their homeland.",
+            condition: "very_good",
+            purchase_price: 12.99,
+            asking_price: 45.00,
+            category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fantasy')?.id as string,
+            tags: ["fantasy", "adventure", "classic"],
+            status: "draft"
+          },
+          {
+            title: "Vintage Cookbook Collection",
+            authors: ["Various"],
+            isbn: "978-0-123456-78-9",
+            publisher: "Vintage Press",
+            published_date: "1965-01-01",
+            page_count: 250,
+            language: "English",
+            description: "A collection of vintage recipes from the 1960s.",
+            condition: "acceptable",
+            purchase_price: 5.99,
+            asking_price: 25.00,
+            category_id: categories.find((c: Record<string, unknown>) => c.name === 'Vintage')?.id as string,
+            tags: ["vintage", "cookbook", "recipes"],
+            status: "draft"
+          }
+        ];
 
-      const sampleBooks = [
-        {
-          title: "The Great Gatsby",
-          authors: ["F. Scott Fitzgerald"],
-          isbn: "978-0-7432-7356-5",
-          publisher: "Scribner",
-          published_date: "1925-04-10",
-          page_count: 180,
-          language: "English",
-          description: "A classic American novel set in the Jazz Age on Long Island.",
-          condition: "very_good",
-          purchase_price: 15.99,
-          asking_price: 25.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fiction')?.id as string,
-          tags: ["classic", "american literature", "jazz age"],
-          status: "draft"
-        },
-        {
-          title: "Sapiens: A Brief History of Humankind",
-          authors: ["Yuval Noah Harari"],
-          isbn: "978-0-06-231609-7",
-          publisher: "Harper",
-          published_date: "2014-01-01",
-          page_count: 443,
-          language: "English",
-          description: "A sweeping narrative of human history from the Stone Age to the modern age.",
-          condition: "like_new",
-          purchase_price: 18.99,
-          asking_price: 35.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Non-Fiction')?.id as string,
-          tags: ["history", "anthropology", "bestseller"],
-          status: "draft"
-        },
-        {
-          title: "Dune",
-          authors: ["Frank Herbert"],
-          isbn: "978-0-441-17271-9",
-          publisher: "Chilton Books",
-          published_date: "1965-01-01",
-          page_count: 688,
-          language: "English",
-          description: "Epic science fiction novel set on the desert planet Arrakis.",
-          condition: "good",
-          purchase_price: 12.99,
-          asking_price: 40.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Science Fiction')?.id as string,
-          tags: ["sci-fi", "space opera", "desert planet"],
-          status: "draft"
-        },
-        {
-          title: "The Silent Patient",
-          authors: ["Alex Michaelides"],
-          isbn: "978-1-250-30169-7",
-          publisher: "Celadon Books",
-          published_date: "2019-02-05",
-          page_count: 336,
-          language: "English",
-          description: "A psychological thriller about a woman who refuses to speak after allegedly murdering her husband.",
-          condition: "new",
-          purchase_price: 16.99,
-          asking_price: 22.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Mystery')?.id as string,
-          tags: ["thriller", "psychological", "mystery"],
-          status: "draft"
-        },
-        {
-          title: "Educated",
-          authors: ["Tara Westover"],
-          isbn: "978-0-399-59050-4",
-          publisher: "Random House",
-          published_date: "2018-02-20",
-          page_count: 334,
-          language: "English",
-          description: "A memoir about a woman who grows up in a survivalist Mormon family and eventually earns a PhD from Cambridge University.",
-          condition: "very_good",
-          purchase_price: 14.99,
-          asking_price: 28.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Biography')?.id as string,
-          tags: ["memoir", "education", "survival"],
-          status: "draft"
-        },
-        {
-          title: "The Catcher in the Rye",
-          authors: ["J.D. Salinger"],
-          isbn: "0316769487",
-          publisher: "Little, Brown and Company",
-          published_date: "1951-07-16",
-          page_count: 277,
-          language: "English",
-          description: "A classic coming-of-age novel about teenage alienation and loss of innocence.",
-          condition: "good",
-          purchase_price: 8.99,
-          asking_price: 18.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fiction')?.id as string,
-          tags: ["classic", "coming-of-age", "american literature"],
-          status: "draft"
-        },
-        {
-          title: "The Hobbit",
-          authors: ["J.R.R. Tolkien"],
-          isbn: "978-0-261-10221-4",
-          publisher: "George Allen & Unwin",
-          published_date: "1937-09-21",
-          page_count: 310,
-          language: "English",
-          description: "A fantasy novel about a hobbit's journey with dwarves to reclaim their homeland.",
-          condition: "very_good",
-          purchase_price: 12.99,
-          asking_price: 45.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fantasy')?.id as string,
-          tags: ["fantasy", "adventure", "classic"],
-          status: "draft"
-        },
-        {
-          title: "Vintage Cookbook Collection",
-          authors: ["Various"],
-          isbn: "978-0-123456-78-9",
-          publisher: "Vintage Press",
-          published_date: "1965-01-01",
-          page_count: 250,
-          language: "English",
-          description: "A collection of vintage recipes from the 1960s.",
-          condition: "acceptable",
-          purchase_price: 5.99,
-          asking_price: 25.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Vintage')?.id as string,
-          tags: ["vintage", "cookbook", "recipes"],
-          status: "draft"
+        // Add each book to demo storage
+        for (const book of sampleBooks) {
+          const demoBook = {
+            title: book.title,
+            authors: book.authors,
+            isbn: book.isbn,
+            publisher: book.publisher,
+            published_date: book.published_date,
+            page_count: book.page_count,
+            language: book.language,
+            description: book.description,
+            condition: book.condition,
+            purchase_price: book.purchase_price,
+            asking_price: book.asking_price,
+            category: categories.find((c: any) => c.id === book.category_id)?.name,
+            tags: book.tags,
+            status: book.status
+          };
+          demoStorage.addBook(demoBook);
         }
-      ];
 
-      for (const book of sampleBooks) {
-        const { error } = await getSupabaseClient()
-          .from('books')
-          .insert([{
-            ...book,
-            user_id: user?.id
-          }]);
-
-        if (error) {
-          console.error('Error inserting book:', error);
-          throw error;
+        showToast('Sample books added to demo storage! 🎉', 'success');
+      } else {
+        // For real users, add to database
+        if (!user?.id) {
+          setError('User not authenticated');
+          showToast('Please sign in to add sample books', 'error');
+          return;
         }
+
+        for (const book of sampleBooks) {
+          const { error } = await getSupabaseClient()
+            .from('books')
+            .insert([{
+              ...book,
+              user_id: user.id
+            }]);
+
+          if (error) {
+            console.error('Error inserting book:', error);
+            throw error;
+          }
+        }
+
+        showToast('Sample books added successfully! 🎉', 'success');
       }
 
       // Refresh data after adding books
       await fetchData();
-
-      showToast('Sample books added successfully! 🎉', 'success');
     } catch (err: unknown) {
       console.error('Error adding sample books:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';

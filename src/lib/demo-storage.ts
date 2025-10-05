@@ -117,17 +117,23 @@ export class DemoStorage {
             updated_at: new Date().toISOString()
         };
 
-        if (this.data) {
-            this.data.books.push(newBook);
-            this.saveToStorage();
+        // Initialize data if it doesn't exist
+        if (!this.data) {
+            this.data = this.getFallbackData();
         }
 
+        this.data.books.push(newBook);
+        this.saveToStorage();
+
+        console.log('Demo book added:', newBook.title, 'Total books:', this.data.books.length);
         return newBook;
     }
 
     // Update a book in demo data
     public updateBook(id: string, updates: Partial<DemoBook>): DemoBook | null {
-        if (!this.data) return null;
+        if (!this.data) {
+            this.data = this.getFallbackData();
+        }
 
         const bookIndex = this.data.books.findIndex(book => book.id === id);
         if (bookIndex === -1) return null;
@@ -145,7 +151,9 @@ export class DemoStorage {
 
     // Delete a book from demo data
     public deleteBook(id: string): boolean {
-        if (!this.data) return false;
+        if (!this.data) {
+            this.data = this.getFallbackData();
+        }
 
         const initialLength = this.data.books.length;
         this.data.books = this.data.books.filter(book => book.id !== id);

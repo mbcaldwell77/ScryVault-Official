@@ -8,6 +8,7 @@ import { lookupBookByISBN, validateISBN, BookData, getSupabaseClient } from "@/l
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import { cn } from "@/lib/utils";
+import { demoStorage } from "@/lib/demo-storage";
 import { useAuth } from "@/lib/auth-context";
 
 // Note: Sidebar component removed in favor of Header for authentication
@@ -79,34 +80,42 @@ export default function ScanPage() {
 
   const loadRecentBooks = async () => {
     try {
-      // Use demo user ID if in demo mode, otherwise use authenticated user ID
-      const userId = isDemoMode ? '358c3277-8f08-4ee1-a839-b660b9155ec2' : user?.id;
+      if (isDemoMode) {
+        // In demo mode, load books from demo storage
+        const demoData = await demoStorage.getData();
+        const recentDemoBooks = demoData.books
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 5);
+        setRecentBooks(recentDemoBooks);
+        console.log('Loaded demo books:', recentDemoBooks.length);
+      } else {
+        // For real users, load from database
+        if (!user?.id) {
+          console.log('No user ID available for loading recent books');
+          setRecentBooks([]);
+          return;
+        }
 
-      if (!userId) {
-        console.log('No user ID available for loading recent books');
-        setRecentBooks([]);
-        return;
+        const { data, error } = await getSupabaseClient()
+          .from('books')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          console.error('Error loading recent books:', error);
+          console.error('Full error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          return;
+        }
+
+        setRecentBooks(data || []);
       }
-
-      const { data, error } = await getSupabaseClient()
-        .from('books')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) {
-        console.error('Error loading recent books:', error);
-        console.error('Full error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
-        return;
-      }
-
-      setRecentBooks(data || []);
     } catch (error) {
       console.error('Error loading recent books:', error);
     }
@@ -224,31 +233,55 @@ export default function ScanPage() {
       setIsLoading(true);
       setError(null);
 
-      // Use demo user ID if in demo mode, otherwise use authenticated user ID
-      const userId = isDemoMode ? '358c3277-8f08-4ee1-a839-b660b9155ec2' : user?.id;
+      // In demo mode, we save to client-side storage
+      if (isDemoMode) {
+        try {
+          const demoBook = {
+            title: bookDataToSave.title,
+            authors: bookDataToSave.authors,
+            isbn: bookDataToSave.isbn,
+            isbn13: bookDataToSave.isbn13,
+            publisher: bookDataToSave.publisher,
+            published_date: bookDataToSave.publishedDate,
+            page_count: bookDataToSave.pageCount,
+            description: bookDataToSave.description,
+            condition: bookDataToSave.condition || 'good',
+            condition_notes: bookDataToSave.condition_notes,
+            purchase_price: bookDataToSave.purchasePrice,
+            asking_price: bookDataToSave.askingPrice,
+            category: bookDataToSave.category_id ?
+              categories.find((c: any) => c.id === bookDataToSave.category_id)?.name : undefined,
+            tags: [],
+            status: 'draft'
+          };
 
-      console.log('Debug info:', {
-        isDemoMode,
-        user: user,
-        userId,
-        userFromAuth: user?.id,
-        userEmail: user?.email,
-        userAud: user?.aud
-      });
+          demoStorage.addBook(demoBook);
+          setToastMessage('Demo mode: Book saved locally! Sign up to save permanently.');
+          setShowToastState(true);
+          setToastType('success');
 
-      // Test Supabase auth
-      const supabase = getSupabaseClient();
-      const { data: { user: supabaseUser }, error: authError } = await supabase.auth.getUser();
-      console.log('Supabase auth check:', { supabaseUser, authError });
-
-      if (!userId) {
-        setError('User not authenticated. Please sign in or enable demo mode.');
+          // Refresh recent books to show the newly added book
+          await loadRecentBooks();
+        } catch (error) {
+          console.error('Error saving demo book:', error);
+          setToastMessage('Error saving demo book. Please try again.');
+          setShowToastState(true);
+          setToastType('error');
+        }
+        setIsLoading(false);
         return;
       }
 
+      // For real users, require authentication
+      if (!user?.id) {
+        setError('Please sign in to save books to your account.');
+        return;
+      }
+
+      const userId = user.id;
+
       const bookData = {
         user_id: userId,
-        is_demo: isDemoMode, // Add demo flag
         title: bookDataToSave.title,
         authors: bookDataToSave.authors,
         isbn: bookDataToSave.isbn,
