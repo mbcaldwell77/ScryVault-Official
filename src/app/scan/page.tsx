@@ -344,27 +344,18 @@ export default function ScanPage() {
               {/* Quick Action Buttons */}
               <div className="flex flex-wrap justify-center gap-4 mb-12">
                 <button
-                  onClick={handleScanBarcodeClick}
-                  className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 flex items-center gap-2"
-                >
-                  <Camera className="w-5 h-5" />
-                  Scan Barcode
-                </button>
-                <button
                   onClick={() => setShowManualForm(true)}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-blue-500/25 flex items-center gap-2"
+                  className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-4 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 flex items-center gap-2 text-lg"
                 >
-                  <Search className="w-5 h-5" />
-                  Manual Entry
-                </button>
-                <button
-                  className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-6 py-3 rounded-lg font-medium hover:from-orange-600 hover:to-red-700 transition-all duration-200 shadow-lg shadow-orange-500/25 flex items-center gap-2"
-                  disabled
-                >
-                  <Upload className="w-5 h-5" />
-                  Upload Photo (Coming Soon)
+                  <Search className="w-6 h-6" />
+                  Add Book
                 </button>
               </div>
+
+              {/* Removed barcode scanner - manual entry is more reliable */}
+              <p className="text-center text-gray-400 text-sm mb-8">
+                Enter the ISBN number to look up book details automatically
+              </p>
 
               {/* ISBN Input Section */}
               <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-8 mb-6 lg:mb-8">
