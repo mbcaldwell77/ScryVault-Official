@@ -146,22 +146,29 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
           lastScannedRef.current = code;
 
           // Clean up the scanned code (remove any non-numeric characters for ISBN)
-          const cleanCode = code.replace(/[^0-9]/g, '');
+          let cleanCode = code.replace(/[^0-9]/g, '');
 
           addDebug(`🔢 Cleaned: ${cleanCode} (len: ${cleanCode.length})`);
           console.log('Cleaned code:', cleanCode, 'Length:', cleanCode.length);
 
-          // More robust ISBN validation - accept 10 or 13 digit codes
-          if (cleanCode.length >= 10 && cleanCode.length <= 13) {
-            addDebug(`✅ Valid ISBN!`);
-            console.log('✅ Valid ISBN detected:', cleanCode);
+          // Convert UPC-E (8 digits) to UPC-A (12 digits) if needed
+          if (cleanCode.length === 8) {
+            // Pad to 12 digits by adding leading zeros
+            cleanCode = '0000' + cleanCode;
+            addDebug(`🔄 Converted 8→12: ${cleanCode}`);
+          }
+
+          // Accept 10, 12, or 13 digit codes
+          if (cleanCode.length === 10 || cleanCode.length === 12 || cleanCode.length === 13) {
+            addDebug(`✅ Valid! Using: ${cleanCode}`);
+            console.log('✅ Valid code detected:', cleanCode);
             onScan(cleanCode);
             if (quaggaRef.current) {
               quaggaRef.current.stop();
             }
           } else {
             addDebug(`❌ Invalid length: ${cleanCode.length}`);
-            console.log('❌ Invalid ISBN length:', cleanCode.length);
+            console.log('❌ Invalid code length:', cleanCode.length);
           }
         };
 
@@ -198,20 +205,20 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
             type: "LiveStream",
             target: scannerRef.current,
             constraints: {
-              width: { min: 640, ideal: 1280 },
-              height: { min: 480, ideal: 720 },
+              width: { min: 640, ideal: 1920, max: 1920 },
+              height: { min: 480, ideal: 1080, max: 1080 },
               facingMode: "environment"
             },
             area: {
-              top: "20%",
-              right: "10%",
-              left: "10%",
-              bottom: "20%"
+              top: "15%",
+              right: "5%",
+              left: "5%",
+              bottom: "15%"
             }
           },
           locator: {
-            patchSize: "medium",
-            halfSample: true
+            patchSize: "large",
+            halfSample: false
           },
           numOfWorkers: 0,
           decoder: {
@@ -230,7 +237,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
             }
           },
           locate: true,
-          frequency: 10
+          frequency: 5
         }, (err: unknown) => {
           if (err) {
             console.error('Quagga initialization error:', err);
@@ -369,30 +376,31 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
               <div className="relative">
                 <div
                   ref={scannerRef}
-                  className={`w-full ${isMobile ? 'h-[450px]' : 'h-[480px]'} bg-black rounded-lg overflow-hidden`}
+                  className={`w-full ${isMobile ? 'h-[320px]' : 'h-[400px]'} bg-black rounded-lg overflow-hidden`}
                 />
 
                 {/* Scanning Overlay */}
                 {isInitialized && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     {/* Dark overlay to focus on scan area */}
-                    <div className="absolute inset-0 bg-black/40"></div>
+                    <div className="absolute inset-0 bg-black/30"></div>
 
-                    {/* Scan frame */}
+                    {/* Scan frame - larger relative to viewport */}
                     <div className="relative z-10">
                       <div className="border-4 border-emerald-400 rounded-lg shadow-lg shadow-emerald-400/50" style={{
-                        width: isMobile ? '280px' : '320px',
-                        height: isMobile ? '140px' : '192px'
+                        width: isMobile ? '90%' : '400px',
+                        height: isMobile ? '160px' : '200px',
+                        maxWidth: '340px'
                       }}>
                         {/* Corner markers */}
-                        <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-emerald-300"></div>
-                        <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-emerald-300"></div>
-                        <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-emerald-300"></div>
-                        <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-emerald-300"></div>
+                        <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-emerald-300 rounded-tl"></div>
+                        <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-emerald-300 rounded-tr"></div>
+                        <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-emerald-300 rounded-bl"></div>
+                        <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-emerald-300 rounded-br"></div>
 
                         {/* Scanning line animation */}
-                        <div className="absolute inset-0 overflow-hidden">
-                          <div className="absolute w-full h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-scan"></div>
+                        <div className="absolute inset-0 overflow-hidden rounded-lg">
+                          <div className="absolute w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-scan shadow-lg shadow-emerald-400/50"></div>
                         </div>
                       </div>
                     </div>
