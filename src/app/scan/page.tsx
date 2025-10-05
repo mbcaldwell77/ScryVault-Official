@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2, Camera } from "lucide-react";
+import { Search, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { lookupBookByISBN, validateISBN, BookData, getSupabaseClient } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import Sidebar from "../components/Sidebar";
-import BarcodeScanner from "@/components/BarcodeScannerNew";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 
@@ -37,7 +36,6 @@ export default function ScanPage() {
   const [bookData, setBookData] = useState<BookData | null>(null);
   const [showManualForm, setShowManualForm] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recentBooks, setRecentBooks] = useState<Record<string, unknown>[]>([]);
   const [categories, setCategories] = useState<Record<string, unknown>[]>([]);
@@ -85,7 +83,7 @@ export default function ScanPage() {
       const { data, error } = await getSupabaseClient()
         .from('books')
         .select('*')
-        .eq('user_id', '550e8400-e29b-41d4-a716-446655440000') // Demo user ID
+        .eq('user_id', user?.id) // Use current user ID
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -207,16 +205,6 @@ export default function ScanPage() {
     }
   };
 
-  const handleBarcodeScan = (scannedISBN: string) => {
-    setShowScanner(false);
-    setIsbnInput(scannedISBN);
-    setIsbnValid(true);
-    // Add a small delay to show the user what was scanned
-    setTimeout(() => {
-      handleISBNLookup();
-    }, 500);
-  };
-
   const handleSaveBook = async (bookDataToSave: ManualBookData) => {
     try {
       setIsLoading(true);
@@ -225,7 +213,7 @@ export default function ScanPage() {
       const { error } = await getSupabaseClient()
         .from('books')
         .insert([{
-          user_id: '550e8400-e29b-41d4-a716-446655440000', // TEMP: Demo user ID - data persistence fixed with disabled RLS
+          user_id: user?.id, // Use current user ID
           title: bookDataToSave.title,
           authors: bookDataToSave.authors,
           isbn: bookDataToSave.isbn,
@@ -428,14 +416,6 @@ export default function ScanPage() {
                           <span>Type ISBN and press <kbd className="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-xs">Enter</kbd> or click Look Up</span>
                         </div>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
-                          <button
-                            onClick={() => setShowScanner(true)}
-                            className="text-cyan-400 hover:text-cyan-300 text-sm underline flex items-center gap-1"
-                          >
-                            <Camera className="w-3 h-3" />
-                            Scan barcode with camera
-                          </button>
-                          <span className="text-gray-600 text-xs hidden sm:inline">•</span>
                           <button
                             onClick={() => {
                               resetForm();
@@ -850,17 +830,6 @@ export default function ScanPage() {
             </div>
           </div>
         )}
-
-        {/* Barcode Scanner Modal */}
-        <BarcodeScanner
-          isOpen={showScanner}
-          onScan={handleBarcodeScan}
-          onClose={() => setShowScanner(false)}
-          onManualEntry={() => {
-            setShowScanner(false);
-            setShowManualForm(true);
-          }}
-        />
       </div>
     </AuthGuard>
   );

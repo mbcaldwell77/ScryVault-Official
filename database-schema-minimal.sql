@@ -1,10 +1,14 @@
--- ScryVault Database Schema
--- Book scanning and inventory management system
+-- ScryVault Database Schema - Minimal Reset
+-- Only creates what's needed, no dropping
+
+-- =============================================
+-- RECREATE ALL TABLES
+-- =============================================
 
 -- =============================================
 -- 1. CATEGORIES TABLE
 -- =============================================
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL,
     description TEXT,
@@ -16,7 +20,7 @@ CREATE TABLE categories (
 -- =============================================
 -- 2. BOOKS TABLE (Core inventory)
 -- =============================================
-CREATE TABLE books (
+CREATE TABLE IF NOT EXISTS books (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
 
@@ -67,7 +71,7 @@ CREATE TABLE books (
 -- =============================================
 -- 3. SCANS TABLE (Scanning events)
 -- =============================================
-CREATE TABLE scans (
+CREATE TABLE IF NOT EXISTS scans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     book_id UUID REFERENCES books(id) ON DELETE CASCADE,
@@ -91,7 +95,7 @@ CREATE TABLE scans (
 -- =============================================
 -- 4. PHOTOS TABLE (Book images)
 -- =============================================
-CREATE TABLE photos (
+CREATE TABLE IF NOT EXISTS photos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     book_id UUID REFERENCES books(id) ON DELETE CASCADE NOT NULL,
 
@@ -118,13 +122,14 @@ CREATE TABLE photos (
 -- =============================================
 -- 5. LISTINGS TABLE (eBay listings)
 -- =============================================
-CREATE TABLE listings (
+CREATE TABLE IF NOT EXISTS listings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     book_id UUID REFERENCES books(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
 
     -- eBay listing details
     ebay_item_id VARCHAR(50) UNIQUE,
+    offer_id VARCHAR(50), -- Store offer ID for webhook updates
     title VARCHAR(80) NOT NULL, -- eBay title limit
     description TEXT,
 
@@ -154,7 +159,7 @@ CREATE TABLE listings (
 -- =============================================
 -- 6. USER SETTINGS TABLE
 -- =============================================
-CREATE TABLE user_settings (
+CREATE TABLE IF NOT EXISTS user_settings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
 
@@ -171,6 +176,7 @@ CREATE TABLE user_settings (
     default_currency VARCHAR(3) DEFAULT 'USD',
     default_shipping_cost DECIMAL(8,2) DEFAULT 0,
 
+    -- eBay settings
     ebay_return_policy VARCHAR(50) DEFAULT '30 days',
     ebay_marketplace VARCHAR(20) DEFAULT 'EBAY_US',
     ebay_listing_type VARCHAR(20) DEFAULT 'fixed',
@@ -183,7 +189,7 @@ CREATE TABLE user_settings (
 -- =============================================
 -- 7. EBAY_TOKENS TABLE
 -- =============================================
-CREATE TABLE ebay_tokens (
+CREATE TABLE IF NOT EXISTS ebay_tokens (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     access_token TEXT NOT NULL,
     refresh_token TEXT NOT NULL,
@@ -194,34 +200,67 @@ CREATE TABLE ebay_tokens (
 );
 
 -- =============================================
+-- ADD MISSING COLUMNS TO EXISTING TABLES
+-- =============================================
+
+-- Add offer_id to listings if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'listings' AND column_name = 'offer_id') THEN
+        ALTER TABLE listings ADD COLUMN offer_id VARCHAR(50);
+    END IF;
+END $$;
+
+-- Add eBay settings to user_settings if they don't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_settings' AND column_name = 'ebay_return_policy') THEN
+        ALTER TABLE user_settings ADD COLUMN ebay_return_policy VARCHAR(50) DEFAULT '30 days';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_settings' AND column_name = 'ebay_marketplace') THEN
+        ALTER TABLE user_settings ADD COLUMN ebay_marketplace VARCHAR(20) DEFAULT 'EBAY_US';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'user_settings' AND column_name = 'ebay_listing_type') THEN
+        ALTER TABLE user_settings ADD COLUMN ebay_listing_type VARCHAR(20) DEFAULT 'fixed';
+    END IF;
+END $$;
+
+-- =============================================
 -- INDEXES FOR PERFORMANCE
 -- =============================================
 
 -- Books table indexes
-CREATE INDEX idx_books_user_id ON books(user_id);
-CREATE INDEX idx_books_status ON books(status);
-CREATE INDEX idx_books_category ON books(category_id);
-CREATE INDEX idx_books_isbn ON books(isbn);
-CREATE INDEX idx_books_search ON books USING gin(search_vector);
-CREATE INDEX idx_books_created_at ON books(created_at);
+CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id);
+CREATE INDEX IF NOT EXISTS idx_books_status ON books(status);
+CREATE INDEX IF NOT EXISTS idx_books_category ON books(category_id);
+CREATE INDEX IF NOT EXISTS idx_books_isbn ON books(isbn);
+CREATE INDEX IF NOT EXISTS idx_books_search ON books USING gin(search_vector);
+CREATE INDEX IF NOT EXISTS idx_books_created_at ON books(created_at);
 
 -- Scans table indexes
-CREATE INDEX idx_scans_user_id ON scans(user_id);
-CREATE INDEX idx_scans_book_id ON scans(book_id);
-CREATE INDEX idx_scans_created_at ON scans(created_at);
+CREATE INDEX IF NOT EXISTS idx_scans_user_id ON scans(user_id);
+CREATE INDEX IF NOT EXISTS idx_scans_book_id ON scans(book_id);
+CREATE INDEX IF NOT EXISTS idx_scans_created_at ON scans(created_at);
 
 -- Photos table indexes
-CREATE INDEX idx_photos_book_id ON photos(book_id);
-CREATE INDEX idx_photos_primary ON photos(book_id, is_primary);
+CREATE INDEX IF NOT EXISTS idx_photos_book_id ON photos(book_id);
+CREATE INDEX IF NOT EXISTS idx_photos_primary ON photos(book_id, is_primary);
 
 -- Listings table indexes
-CREATE INDEX idx_listings_book_id ON listings(book_id);
-CREATE INDEX idx_listings_user_id ON listings(user_id);
-CREATE INDEX idx_listings_status ON listings(status);
-CREATE INDEX idx_listings_ebay_item_id ON listings(ebay_item_id);
+CREATE INDEX IF NOT EXISTS idx_listings_book_id ON listings(book_id);
+CREATE INDEX IF NOT EXISTS idx_listings_user_id ON listings(user_id);
+CREATE INDEX IF NOT EXISTS idx_listings_status ON listings(status);
+CREATE INDEX IF NOT EXISTS idx_listings_ebay_item_id ON listings(ebay_item_id);
+CREATE INDEX IF NOT EXISTS idx_listings_offer_id ON listings(offer_id);
 
 -- Ebay tokens table indexes
-CREATE INDEX idx_ebay_tokens_user_id ON ebay_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_ebay_tokens_user_id ON ebay_tokens(user_id);
 
 -- =============================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -235,6 +274,26 @@ ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE listings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ebay_tokens ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Categories are viewable by everyone" ON categories;
+DROP POLICY IF EXISTS "Users can view their own books" ON books;
+DROP POLICY IF EXISTS "Users can insert their own books" ON books;
+DROP POLICY IF EXISTS "Users can update their own books" ON books;
+DROP POLICY IF EXISTS "Users can delete their own books" ON books;
+DROP POLICY IF EXISTS "Users can view their own scans" ON scans;
+DROP POLICY IF EXISTS "Users can insert their own scans" ON scans;
+DROP POLICY IF EXISTS "Users can view photos of their books" ON photos;
+DROP POLICY IF EXISTS "Users can insert photos for their books" ON photos;
+DROP POLICY IF EXISTS "Users can update photos of their books" ON photos;
+DROP POLICY IF EXISTS "Users can delete photos of their books" ON photos;
+DROP POLICY IF EXISTS "Users can view their own listings" ON listings;
+DROP POLICY IF EXISTS "Users can insert their own listings" ON listings;
+DROP POLICY IF EXISTS "Users can update their own listings" ON listings;
+DROP POLICY IF EXISTS "Users can view their own settings" ON user_settings;
+DROP POLICY IF EXISTS "Users can insert their own settings" ON user_settings;
+DROP POLICY IF EXISTS "Users can update their own settings" ON user_settings;
+DROP POLICY IF EXISTS "Users can manage their own ebay tokens" ON ebay_tokens;
 
 -- Categories (public read)
 CREATE POLICY "Categories are viewable by everyone" ON categories FOR SELECT USING (true);
@@ -305,6 +364,15 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- Drop existing triggers if they exist
+DROP TRIGGER IF EXISTS update_books_updated_at ON books;
+DROP TRIGGER IF EXISTS update_categories_updated_at ON categories;
+DROP TRIGGER IF EXISTS update_photos_updated_at ON photos;
+DROP TRIGGER IF EXISTS update_listings_updated_at ON listings;
+DROP TRIGGER IF EXISTS update_user_settings_updated_at ON user_settings;
+DROP TRIGGER IF EXISTS update_ebay_tokens_updated_at ON ebay_tokens;
+DROP TRIGGER IF EXISTS update_books_search_vector ON books;
+
 -- Triggers for updated_at
 CREATE TRIGGER update_books_updated_at BEFORE UPDATE ON books FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -325,7 +393,7 @@ CREATE TRIGGER update_books_search_vector
 -- DEFAULT DATA
 -- =============================================
 
--- Insert default categories
+-- Insert default categories (only if they don't exist)
 INSERT INTO categories (name, description, color) VALUES
 ('Fiction', 'Novels, short stories, and fictional works', '#3b82f6'),
 ('Non-Fiction', 'Educational, biographical, and factual books', '#10b981'),
@@ -336,27 +404,5 @@ INSERT INTO categories (name, description, color) VALUES
 ('History', 'Historical events and periods', '#84cc16'),
 ('Self-Help', 'Personal development and motivation', '#f97316'),
 ('Textbook', 'Educational and academic materials', '#6366f1'),
-('Children', 'Books for young readers', '#14b8a6');
-
--- =============================================
--- DEVELOPMENT HELPERS (Remove in production)
--- =============================================
-
--- =============================================
--- COMMENTS FOR DOCUMENTATION
--- =============================================
-
-COMMENT ON TABLE categories IS 'Book categories and genres for organization';
-COMMENT ON TABLE books IS 'Core inventory table containing all book information';
-COMMENT ON TABLE scans IS 'Tracks individual book scanning events';
-COMMENT ON TABLE photos IS 'Images associated with books';
-COMMENT ON TABLE listings IS 'eBay listings created from books';
-COMMENT ON TABLE user_settings IS 'User preferences and app settings';
-COMMENT ON TABLE ebay_tokens IS 'eBay OAuth tokens for user authentication';
-
-COMMENT ON COLUMN books.search_vector IS 'Full-text search index for book titles, authors, and descriptions';
-COMMENT ON COLUMN books.condition IS 'Physical condition of the book (new, like_new, very_good, good, acceptable, poor)';
-COMMENT ON COLUMN books.status IS 'Current status of the book (draft, listed, sold, archived)';
-COMMENT ON COLUMN listings.status IS 'Status of eBay listing (draft, listed, sold, ended, cancelled)';
-COMMENT ON COLUMN photos.is_primary IS 'Indicates if this is the main image for the book';
-COMMENT ON COLUMN scans.scan_method IS 'Method used to scan the book (camera, manual, upload)';
+('Children', 'Books for young readers', '#14b8a6')
+ON CONFLICT (name) DO NOTHING;

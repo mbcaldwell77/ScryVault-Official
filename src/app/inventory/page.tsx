@@ -233,25 +233,49 @@ export default function InventoryPage() {
       // Generate SKU for the listing
       const sku = `SCRY-${book.id}-${Date.now()}`
 
-      // Create inventory item first
-      await ebayAPI.createInventoryItem(sku, bookData)
+      // Create inventory item via API
+      const inventoryRes = await fetch('/api/ebay/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sku: book.id, bookData: book })
+      })
 
-      // Create offer for the inventory item
-      const offer = await ebayAPI.createOffer(sku, bookData)
+      if (!inventoryRes.ok) throw new Error('Failed to create inventory')
 
-      // Publish the offer to create live listing
-      const listing = await ebayAPI.publishOffer(offer.offerId)
+      const inventory = await inventoryRes.json()
 
-      // Save listing data to database
+      // Create offer
+      const offerRes = await fetch('/api/ebay/offer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sku: book.id, bookData: book })
+      })
+
+      if (!offerRes.ok) throw new Error('Failed to create offer')
+
+      const offer = await offerRes.json()
+
+      // Publish
+      const publishRes = await fetch('/api/ebay/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ offerId: offer.offerId })
+      })
+
+      if (!publishRes.ok) throw new Error('Failed to publish')
+
+      const publish = await publishRes.json()
+
+      // Then insert to listings table as before
       await getSupabaseClient().from('listings').insert([{
         book_id: bookData.id,
         user_id: '550e8400-e29b-41d4-a716-446655440000', // Demo user ID
-        ebay_item_id: listing.listingId,
+        ebay_item_id: publish.listingId,
         title: generateEbayListingTitle(bookData),
         description: bookData.description || `${bookData.title} by ${bookData.authors?.join(', ') || 'Unknown Author'}`,
         start_price: bookData.asking_price,
         status: 'listed',
-        ebay_response: listing
+        ebay_response: publish
       }])
 
       // Update book status to listed
@@ -567,7 +591,7 @@ export default function InventoryPage() {
           .from('books')
           .insert([{
             ...book,
-            user_id: '550e8400-e29b-41d4-a716-446655440000' // Demo user ID
+            user_id: user?.id
           }]);
 
         if (error) {

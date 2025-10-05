@@ -135,151 +135,8 @@ export interface EbayUserTokens {
 
 // eBay API Client Class
 export class EbayAPI {
-  private accessToken: string | null = null
-  private refreshToken: string | null = null
-  private tokenExpiresAt: Date | null = null
-
   constructor() {
-    this.loadStoredTokens()
-  }
-
-  // Load tokens from database
-  private async loadStoredTokens() {
-    // Only run in browser environment
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-      return
-    }
-
-    try {
-      // For demo purposes, use a fixed user ID
-      const userId = '550e8400-e29b-41d4-a716-446655440000'
-
-      // In a real implementation, you'd have a table for eBay tokens
-      // For now, we'll use localStorage for demo purposes
-      const tokens = localStorage.getItem(`ebay_tokens_${userId}`)
-      if (tokens) {
-        const parsed = JSON.parse(tokens)
-        this.accessToken = parsed.access_token
-        this.refreshToken = parsed.refresh_token
-        this.tokenExpiresAt = new Date(parsed.expires_at)
-      }
-    } catch (error) {
-      console.error('Error loading eBay tokens:', error)
-    }
-  }
-
-  // Store tokens securely
-  private async storeTokens(tokens: EbayTokenResponse) {
-    try {
-      console.log('💾 Storing eBay tokens...')
-      // For demo purposes, use a fixed user ID
-      const userId = '550e8400-e29b-41d4-a716-446655440000'
-
-      const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000))
-
-      const tokenData = {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_at: expiresAt.toISOString()
-      }
-
-      // Store in localStorage for now (in production, use secure storage)
-      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-        localStorage.setItem(`ebay_tokens_${userId}`, JSON.stringify(tokenData))
-        console.log('✅ eBay tokens stored successfully')
-      }
-
-      this.accessToken = tokens.access_token
-      this.refreshToken = tokens.refresh_token
-      this.tokenExpiresAt = expiresAt
-    } catch (error) {
-      console.error('❌ Error storing eBay tokens:', error)
-      throw error
-    }
-  }
-
-  // Check if token is expired or will expire soon
-  private isTokenExpired(): boolean {
-    if (!this.tokenExpiresAt) return true
-    // Consider token expired if it expires within 5 minutes
-    return this.tokenExpiresAt.getTime() < (Date.now() + 5 * 60 * 1000)
-  }
-
-  // Refresh access token
-  private async refreshAccessToken(): Promise<void> {
-    if (!this.refreshToken) {
-      throw new Error('No refresh token available')
-    }
-
-    try {
-      const response = await fetch(ENDPOINTS.TOKEN, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${btoa(`${EBAY_APP_ID}:${EBAY_CERT_ID}`)}`
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: this.refreshToken,
-          scope: 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account',
-          redirect_uri: EBAY_RU_NAME  // Include redirect_uri for refresh token
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error(`Token refresh failed: ${response.status}`)
-      }
-
-      const tokens: EbayTokenResponse = await response.json()
-      await this.storeTokens(tokens)
-    } catch (error) {
-      console.error('Error refreshing eBay token:', error)
-      throw error
-    }
-  }
-
-  // Get valid access token
-  private async getValidAccessToken(): Promise<string> {
-    if (this.isTokenExpired()) {
-      await this.refreshAccessToken()
-    }
-    return this.accessToken!
-  }
-
-  // Make authenticated API request
-  private async makeAuthenticatedRequest(
-    url: string,
-    options: RequestInit = {}
-  ): Promise<Response> {
-    const token = await this.getValidAccessToken()
-
-    const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
-      ...options.headers
-    }
-
-    const response = await fetch(url, {
-      ...options,
-      headers
-    })
-
-    if (response.status === 401) {
-      // Token might be expired, try refreshing
-      await this.refreshAccessToken()
-      const newToken = await this.getValidAccessToken()
-
-      return fetch(url, {
-        ...options,
-        headers: {
-          ...headers,
-          'Authorization': `Bearer ${newToken}`
-        }
-      })
-    }
-
-    return response
+    // No-op, as token handling is now server-side
   }
 
   // Generate OAuth authorization URL
@@ -303,6 +160,7 @@ export class EbayAPI {
   }
 
   // Exchange authorization code for tokens
+  // This method is now handled by the API route
   async exchangeCodeForTokens(code: string): Promise<EbayTokenResponse> {
     console.log('🔄 Starting token exchange...')
     console.log('Code length:', code.length)
@@ -346,7 +204,6 @@ export class EbayAPI {
         token_type: tokens.token_type
       })
 
-      await this.storeTokens(tokens)
       return tokens
     } catch (error) {
       console.error('Error exchanging code for tokens:', error)
@@ -355,6 +212,7 @@ export class EbayAPI {
   }
 
   // Create inventory item
+  // This method is now handled by the API route
   async createInventoryItem(sku: string, bookData: {
     title: string
     description?: string
@@ -404,13 +262,15 @@ export class EbayAPI {
         }
       }
 
-      const response = await this.makeAuthenticatedRequest(
-        `${ENDPOINTS.LISTING}/${sku}`,
-        {
-          method: 'PUT',
-          body: JSON.stringify(inventoryData)
-        }
-      )
+      const response = await fetch(ENDPOINTS.LISTING, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.EBAY_ACCESS_TOKEN!}`, // Use server-side token
+          'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
+        },
+        body: JSON.stringify(inventoryData)
+      })
 
       if (!response.ok) {
         const errorData = await response.text()
@@ -425,6 +285,7 @@ export class EbayAPI {
   }
 
   // Create offer for inventory item
+  // This method is now handled by the API route
   async createOffer(sku: string, bookData: {
     title: string
     description?: string
@@ -458,8 +319,13 @@ export class EbayAPI {
         }
       }
 
-      const response = await this.makeAuthenticatedRequest(ENDPOINTS.OFFER, {
+      const response = await fetch(ENDPOINTS.OFFER, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.EBAY_ACCESS_TOKEN!}`, // Use server-side token
+          'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
+        },
         body: JSON.stringify(offerData)
       })
 
@@ -476,17 +342,20 @@ export class EbayAPI {
   }
 
   // Publish offer to create live listing
+  // This method is now handled by the API route
   async publishOffer(offerId: string): Promise<EbayPublishResponse> {
     try {
-      const response = await this.makeAuthenticatedRequest(
-        `${ENDPOINTS.PUBLISH_OFFER}/${offerId}/publish`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            marketplaceId: 'EBAY_US'
-          })
-        }
-      )
+      const response = await fetch(`${ENDPOINTS.PUBLISH_OFFER}/${offerId}/publish`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.EBAY_ACCESS_TOKEN!}`, // Use server-side token
+          'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US'
+        },
+        body: JSON.stringify({
+          marketplaceId: 'EBAY_US'
+        })
+      })
 
       if (!response.ok) {
         const errorData = await response.text()
@@ -515,10 +384,13 @@ export class EbayAPI {
   }
 
   // Check if user is authenticated with eBay
+  // This method is now handled by the API route
   async isAuthenticated(): Promise<boolean> {
     try {
-      await this.getValidAccessToken()
-      return true
+      // In a real application, you'd check if a token exists in the database
+      // For now, we'll assume if we can get a token, we are authenticated
+      // This is a placeholder and needs proper server-side token validation
+      return !!process.env.EBAY_ACCESS_TOKEN
     } catch {
       return false
     }
@@ -585,15 +457,13 @@ export class EbayAPI {
   }
 
   // Clear stored tokens (logout)
+  // This method is now handled by the API route
   async logout(): Promise<void> {
     try {
-      const { data: { user } } = await getSupabaseClient().auth.getUser()
-      if (user && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-        localStorage.removeItem(`ebay_tokens_${user.id}`)
-      }
-      this.accessToken = null
-      this.refreshToken = null
-      this.tokenExpiresAt = null
+      // In a real application, you'd clear tokens from the database
+      // For now, we'll just remove the server-side token
+      delete process.env.EBAY_ACCESS_TOKEN
+      console.log('eBay tokens cleared from environment.')
     } catch (error) {
       console.error('Error during eBay logout:', error)
     }

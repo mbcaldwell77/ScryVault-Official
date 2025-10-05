@@ -1,5 +1,35 @@
--- ScryVault Database Schema
--- Book scanning and inventory management system
+-- ScryVault Database Schema - Safe Reset
+-- This version handles missing tables gracefully
+
+-- =============================================
+-- DROP ALL EXISTING TABLES (in dependency order)
+-- =============================================
+
+-- Drop triggers first (with IF EXISTS)
+DROP TRIGGER IF EXISTS update_books_search_vector ON books;
+DROP TRIGGER IF EXISTS update_ebay_tokens_updated_at ON ebay_tokens;
+DROP TRIGGER IF EXISTS update_user_settings_updated_at ON user_settings;
+DROP TRIGGER IF EXISTS update_listings_updated_at ON listings;
+DROP TRIGGER IF EXISTS update_photos_updated_at ON photos;
+DROP TRIGGER IF EXISTS update_categories_updated_at ON categories;
+DROP TRIGGER IF EXISTS update_books_updated_at ON books;
+
+-- Drop functions (with IF EXISTS)
+DROP FUNCTION IF EXISTS update_book_search_vector();
+DROP FUNCTION IF EXISTS update_updated_at_column();
+
+-- Drop tables (in dependency order, with IF EXISTS)
+DROP TABLE IF EXISTS ebay_tokens CASCADE;
+DROP TABLE IF EXISTS user_settings CASCADE;
+DROP TABLE IF EXISTS listings CASCADE;
+DROP TABLE IF EXISTS photos CASCADE;
+DROP TABLE IF EXISTS scans CASCADE;
+DROP TABLE IF EXISTS books CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
+
+-- =============================================
+-- RECREATE ALL TABLES
+-- =============================================
 
 -- =============================================
 -- 1. CATEGORIES TABLE
@@ -125,6 +155,7 @@ CREATE TABLE listings (
 
     -- eBay listing details
     ebay_item_id VARCHAR(50) UNIQUE,
+    offer_id VARCHAR(50), -- Store offer ID for webhook updates
     title VARCHAR(80) NOT NULL, -- eBay title limit
     description TEXT,
 
@@ -171,6 +202,7 @@ CREATE TABLE user_settings (
     default_currency VARCHAR(3) DEFAULT 'USD',
     default_shipping_cost DECIMAL(8,2) DEFAULT 0,
 
+    -- eBay settings
     ebay_return_policy VARCHAR(50) DEFAULT '30 days',
     ebay_marketplace VARCHAR(20) DEFAULT 'EBAY_US',
     ebay_listing_type VARCHAR(20) DEFAULT 'fixed',
@@ -219,6 +251,7 @@ CREATE INDEX idx_listings_book_id ON listings(book_id);
 CREATE INDEX idx_listings_user_id ON listings(user_id);
 CREATE INDEX idx_listings_status ON listings(status);
 CREATE INDEX idx_listings_ebay_item_id ON listings(ebay_item_id);
+CREATE INDEX idx_listings_offer_id ON listings(offer_id);
 
 -- Ebay tokens table indexes
 CREATE INDEX idx_ebay_tokens_user_id ON ebay_tokens(user_id);
@@ -339,10 +372,6 @@ INSERT INTO categories (name, description, color) VALUES
 ('Children', 'Books for young readers', '#14b8a6');
 
 -- =============================================
--- DEVELOPMENT HELPERS (Remove in production)
--- =============================================
-
--- =============================================
 -- COMMENTS FOR DOCUMENTATION
 -- =============================================
 
@@ -360,3 +389,4 @@ COMMENT ON COLUMN books.status IS 'Current status of the book (draft, listed, so
 COMMENT ON COLUMN listings.status IS 'Status of eBay listing (draft, listed, sold, ended, cancelled)';
 COMMENT ON COLUMN photos.is_primary IS 'Indicates if this is the main image for the book';
 COMMENT ON COLUMN scans.scan_method IS 'Method used to scan the book (camera, manual, upload)';
+COMMENT ON COLUMN listings.offer_id IS 'eBay offer ID for webhook event processing';

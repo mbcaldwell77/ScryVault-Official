@@ -259,3 +259,38 @@ Investigated web-based barcode scanning and concluded it's not viable for produc
 Complete mobile UI overhaul with native mobile experience. All responsiveness issues resolved and layout system unified across all pages.
 
 **Current Focus: eBay integration and marketplace connectivity!** 🚀
+
+## Setup Instructions
+
+### Environment Variables
+
+Create .env.local with:
+
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+EBAY_APP_ID=your_app_id
+EBAY_CERT_ID=your_cert_id
+NEXT_PUBLIC_EBAY_REDIRECT_URI_DEV=your_dev_redirect
+NEXT_PUBLIC_EBAY_REDIRECT_URI_PROD=your_prod_redirect
+EBAY_VERIFICATION_TOKEN=your_webhook_token
+
+### Obtaining eBay Credentials
+
+1. Go to eBay Developers Program
+2. Create app
+3. Get App ID, Cert ID
+4. Set redirect URIs
+5. For sandbox/testing, use sandbox credentials
+
+### Running Locally
+
+npm install
+npm run dev
+
+### Connecting to eBay
+
+Go to Settings, click Connect to eBay, authorize.
+
+### Listing a Book
+
+In Inventory, select book, click List on eBay, preview and confirm.

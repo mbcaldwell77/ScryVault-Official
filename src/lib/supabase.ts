@@ -614,6 +614,9 @@ export type Database = {
           language: string
           default_currency: string
           default_shipping_cost: number
+          ebay_return_policy: string
+          ebay_marketplace: string
+          ebay_listing_type: string
           created_at: string
           updated_at: string
         }
@@ -627,6 +630,9 @@ export type Database = {
           language?: string
           default_currency?: string
           default_shipping_cost?: number
+          ebay_return_policy?: string
+          ebay_marketplace?: string
+          ebay_listing_type?: string
           created_at?: string
           updated_at?: string
         }
@@ -640,6 +646,9 @@ export type Database = {
           language?: string
           default_currency?: string
           default_shipping_cost?: number
+          ebay_return_policy?: string
+          ebay_marketplace?: string
+          ebay_listing_type?: string
           created_at?: string
           updated_at?: string
         }

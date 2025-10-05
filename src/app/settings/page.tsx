@@ -7,14 +7,37 @@ import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import { ebayAPI } from "@/lib/ebay";
 import { useState, useEffect } from "react";
+import { getSupabaseClient } from "@/lib/supabase";
+import { useAuth } from '@/lib/auth-context'
 
 export default function SettingsPage() {
   const [ebayAuthStatus, setEbayAuthStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking')
   const [ebayAuthLoading, setEbayAuthLoading] = useState(false)
 
+  // Add state for settings
+  const [shippingCost, setShippingCost] = useState(0)
+  const [returnPolicy, setReturnPolicy] = useState('30 days')
+  const [marketplace, setMarketplace] = useState('EBAY_US')
+  const [listingType, setListingType] = useState('fixed')
+
+  const { user } = useAuth();
+
   useEffect(() => {
     checkEbayAuthStatus()
-  }, [])
+    // Load from user_settings on mount
+    const fetchSettings = async () => {
+      if (user) {
+        const { data } = await getSupabaseClient().from('user_settings').select('*').single()
+        if (data) {
+          setShippingCost(data.default_shipping_cost)
+          setReturnPolicy(data.ebay_return_policy || '30 days')
+          setMarketplace(data.ebay_marketplace || 'EBAY_US')
+          setListingType(data.ebay_listing_type || 'fixed')
+        }
+      }
+    }
+    fetchSettings()
+  }, [user])
 
   const checkEbayAuthStatus = async () => {
     try {
@@ -31,7 +54,7 @@ export default function SettingsPage() {
       setEbayAuthLoading(true)
       // Generate OAuth URL manually since we can't access the static method
       const clientId = process.env.NEXT_PUBLIC_EBAY_APP_ID!
-             const ruName = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
+      const ruName = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
       const scope = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
       const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scope)}&state=/settings`
       window.location.href = authUrl
@@ -54,8 +77,8 @@ export default function SettingsPage() {
       <Sidebar />
       <div className="min-h-screen bg-gray-900 lg:pl-64">
         <Header />
-                                     {/* Page Header */}
-           <div className="p-4 lg:p-6 pt-16 lg:pt-6 border-b border-gray-700/50">
+        {/* Page Header */}
+        <div className="p-4 lg:p-6 pt-16 lg:pt-6 border-b border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Settings</h2>
@@ -64,8 +87,8 @@ export default function SettingsPage() {
           </div>
         </div>
 
-                 {/* Settings Content */}
-         <div className="p-4 lg:p-6">
+        {/* Settings Content */}
+        <div className="p-4 lg:p-6">
           <div className="max-w-4xl mx-auto space-y-6">
 
             {/* Account Settings */}
@@ -351,6 +374,75 @@ export default function SettingsPage() {
                   </Link>
                 </div>
               </div>
+            </div>
+
+            {/* Add form section */}
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+              <h3 className="text-lg font-medium text-white">eBay Settings</h3>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300">Default Shipping Cost</label>
+                <input
+                  type="number"
+                  value={shippingCost}
+                  onChange={(e) => setShippingCost(parseFloat(e.target.value))}
+                  className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300">Return Policy</label>
+                <select
+                  value={returnPolicy}
+                  onChange={(e) => setReturnPolicy(e.target.value)}
+                  className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
+                >
+                  <option>30 days</option>
+                  <option>60 days</option>
+                  <option>No returns</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300">Marketplace</label>
+                <select
+                  value={marketplace}
+                  onChange={(e) => setMarketplace(e.target.value)}
+                  className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
+                >
+                  <option value="EBAY_US">US</option>
+                  <option value="EBAY_GB">UK</option>
+                  {/* Add more */}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300">Listing Type</label>
+                <select
+                  value={listingType}
+                  onChange={(e) => setListingType(e.target.value)}
+                  className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
+                >
+                  <option value="fixed">Fixed Price</option>
+                  <option value="auction">Auction</option>
+                </select>
+              </div>
+
+              <button onClick={async () => {
+                if (user) {
+                  await getSupabaseClient().from('user_settings').update({
+                    default_shipping_cost: shippingCost,
+                    ebay_return_policy: returnPolicy,
+                    ebay_marketplace: marketplace,
+                    ebay_listing_type: listingType
+                  }).eq('user_id', user.id)
+                  alert('Settings saved!')
+                } else {
+                  alert('User not logged in.')
+                }
+              }} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                Save Settings
+              </button>
             </div>
 
           </div>
