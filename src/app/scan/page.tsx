@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, Search, Upload, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2, Camera } from "lucide-react";
+import { Search, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { lookupBookByISBN, validateISBN, BookData, getSupabaseClient } from "@/lib/supabase";
@@ -345,7 +345,7 @@ export default function ScanPage() {
           <div className="p-4 lg:p-6 border-b border-gray-700/50">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-white">Scan Books</h2>
+                <h2 className="text-2xl font-bold text-white">Add Book</h2>
                 <p className="text-gray-400">Add new books to your inventory</p>
               </div>
             </div>
@@ -372,60 +372,10 @@ export default function ScanPage() {
               )}
 
               {/* Header */}
-              <div className="text-center mb-12">
-                <div className="inline-flex items-center space-x-2 bg-gray-800/50 border border-gray-700 rounded-full px-4 py-2 mb-6">
-                  <Sparkles className="w-4 h-4 text-emerald-400" />
-                  <span className="text-sm text-gray-300">AI-Powered Scanning</span>
-                </div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                  <span className="bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
-                    Scan Your Book
-                  </span>
-                </h1>
-                <p className="text-xl text-gray-300 mb-8">
-                  Choose your preferred method to add a new book to your inventory
+              <div className="text-center mb-8">
+                <p className="text-gray-400 mb-6">
+                  Enter an ISBN to auto-fill book details, or add book information manually
                 </p>
-              </div>
-
-              {/* Quick Action Buttons */}
-              <div className="flex flex-wrap justify-center gap-4 mb-8">
-                <button
-                  onClick={() => isbnInputRef.current?.focus()}
-                  className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-4 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25 flex items-center gap-2 text-lg"
-                >
-                  <Search className="w-6 h-6" />
-                  Add Book with ISBN
-                </button>
-                <button
-                  onClick={() => {
-                    resetForm();
-                    setShowManualForm(true);
-                  }}
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-8 py-4 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-lg border border-gray-600"
-                >
-                  <BookOpen className="w-6 h-6" />
-                  Add Without ISBN
-                </button>
-              </div>
-
-              {/* Info boxes */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 text-center">
-                  <p className="text-emerald-400 text-sm font-medium mb-1">
-                    Books with ISBN
-                  </p>
-                  <p className="text-gray-400 text-xs">
-                    Most books from 1970+ • Auto-fills all details
-                  </p>
-                </div>
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-center">
-                  <p className="text-amber-400 text-sm font-medium mb-1">
-                    Vintage & Specialty Books
-                  </p>
-                  <p className="text-gray-400 text-xs">
-                    Pre-1970 books, rare editions • Manual entry
-                  </p>
-                </div>
               </div>
 
               {/* ISBN Input Section */}
@@ -433,9 +383,9 @@ export default function ScanPage() {
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Enter ISBN Number
+                      ISBN Number
                       <span className="text-gray-500 ml-2 text-xs font-normal">
-                        (10 or 13 digits)
+                        (optional)
                       </span>
                     </label>
                     <div className="relative">
@@ -477,9 +427,22 @@ export default function ScanPage() {
 
                     {/* Helpful hints */}
                     {!error && !isbnInput && (
-                      <div className="flex items-center mt-2 text-gray-400 text-xs">
-                        <span className="mr-2">💡</span>
-                        <span>Type ISBN and press <kbd className="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-xs">Enter</kbd> or click Look Up</span>
+                      <div className="flex flex-col gap-2 mt-2">
+                        <div className="flex items-center text-gray-400 text-xs">
+                          <span className="mr-2">💡</span>
+                          <span>Type ISBN and press <kbd className="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-xs">Enter</kbd> or click Look Up</span>
+                        </div>
+                        <div className="text-center pt-2">
+                          <button
+                            onClick={() => {
+                              resetForm();
+                              setShowManualForm(true);
+                            }}
+                            className="text-emerald-400 hover:text-emerald-300 text-sm underline"
+                          >
+                            Don't have an ISBN? Enter book details manually
+                          </button>
+                        </div>
                       </div>
                     )}
 
