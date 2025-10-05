@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { X, Camera, AlertCircle, Edit3 } from 'lucide-react';
-import type { QuaggaResult, QuaggaProcessedResult } from 'quagga';
+import type Quagga from '@ericblade/quagga2';
+import type { QuaggaJSResultObject } from '@ericblade/quagga2';
 
 interface BarcodeScannerProps {
   onScan: (isbn: string) => void;
@@ -13,7 +14,7 @@ interface BarcodeScannerProps {
 
 export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry }: BarcodeScannerProps) {
   const scannerRef = useRef<HTMLDivElement>(null);
-  const quaggaRef = useRef<typeof import('quagga').default | null>(null);
+  const quaggaRef = useRef<typeof Quagga | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [noCameraAvailable, setNoCameraAvailable] = useState(false);
@@ -41,9 +42,8 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
 
     const initializeScanner = async () => {
       try {
-        // Dynamically import Quagga to avoid SSR issues
-        const QuaggaModule = await import('quagga');
-        const Quagga = QuaggaModule.default;
+        // Dynamically import Quagga2 to avoid SSR issues
+        const Quagga = (await import('@ericblade/quagga2')).default;
         quaggaRef.current = Quagga;
 
         if (!scannerRef.current || !isComponentMounted) return;
@@ -108,8 +108,10 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
         if (!hasAccess || !isComponentMounted) return;
 
         // Define handlers outside of Quagga callbacks for proper cleanup
-        const handleDetected = (result: QuaggaResult) => {
-          const code = result.codeResult.code;
+        const handleDetected = (result: QuaggaJSResultObject) => {
+          const code = result.codeResult?.code;
+
+          if (!code) return;
 
           // Prevent duplicate scans
           if (code === lastScannedRef.current) return;
@@ -129,18 +131,20 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
           }
         };
 
-        const handleProcessed = (result: QuaggaProcessedResult) => {
+        const handleProcessed = (result: QuaggaJSResultObject) => {
           if (!quaggaRef.current) return;
 
           const drawingCanvas = quaggaRef.current.canvas.dom.overlay;
           const ctx = drawingCanvas?.getContext('2d');
-          if (!ctx) return;
+          if (!ctx || !drawingCanvas) return;
 
           if (result) {
             if (result.boxes) {
               ctx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width") || "0"), parseInt(drawingCanvas.getAttribute("height") || "0"));
-              result.boxes.filter((box: unknown) => box !== result.box).forEach((box: unknown) => {
-                quaggaRef.current?.ImageDebug.drawPath(box, { x: 0, y: 1 }, ctx, { color: "green", lineWidth: 2 });
+              result.boxes.filter((box) => box !== result.box).forEach((box) => {
+                if (box) {
+                  quaggaRef.current?.ImageDebug.drawPath(box, { x: 0, y: 1 }, ctx, { color: "green", lineWidth: 2 });
+                }
               });
             }
 
@@ -148,7 +152,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
               quaggaRef.current?.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, ctx, { color: "blue", lineWidth: 2 });
             }
 
-            if (result.codeResult && result.codeResult.code) {
+            if (result.codeResult?.code && result.line) {
               quaggaRef.current?.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, ctx, { color: 'red', lineWidth: 3 });
             }
           }
@@ -197,9 +201,11 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
           Quagga.start();
         });
       } catch (err) {
-        console.error('Error loading Quagga:', err);
+        console.error('Error loading Quagga2:', err);
+        console.error('Error details:', err instanceof Error ? err.message : String(err));
         if (isComponentMounted) {
-          setError('Failed to load barcode scanner. Please try refreshing the page.');
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          setError(`Failed to load barcode scanner: ${errorMsg}. Please try refreshing the page.`);
         }
       }
     };
