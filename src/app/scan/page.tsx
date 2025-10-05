@@ -177,25 +177,10 @@ export default function ScanPage() {
     }, 500);
   };
 
-  const handleScanBarcodeClick = async () => {
-    // Check if camera is available before showing scanner
-    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
-      try {
-        // Try to access camera to see if it's available
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }
-        });
-        // If successful, stop the test stream and show scanner
-        stream.getTracks().forEach(track => track.stop());
-        setShowScanner(true);
-      } catch {
-        // Camera not available, show helpful message
-        setError('Camera not available on this device. Please use manual entry or try on a device with a camera.');
-      }
-    } else {
-      // No camera support at all
-      setError('Camera not supported on this device. Please use manual entry instead.');
-    }
+  const handleScanBarcodeClick = () => {
+    // Simply show the scanner - it will handle camera access and errors internally
+    setError(null);
+    setShowScanner(true);
   };
 
   const handleSaveBook = async (bookDataToSave: ManualBookData) => {
