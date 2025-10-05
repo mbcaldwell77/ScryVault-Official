@@ -793,6 +793,10 @@ export default function ScanPage() {
           isOpen={showScanner}
           onScan={handleBarcodeScan}
           onClose={() => setShowScanner(false)}
+          onManualEntry={() => {
+            setShowScanner(false);
+            setShowManualForm(true);
+          }}
         />
       </div>
     </AuthGuard>

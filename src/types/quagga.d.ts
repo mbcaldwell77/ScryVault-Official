@@ -44,6 +44,8 @@ declare module 'quagga' {
     stop(): void;
     onDetected(callback: (result: QuaggaResult) => void): void;
     onProcessed(callback: (result: QuaggaProcessedResult) => void): void;
+    offDetected(callback?: (result: QuaggaResult) => void): void;
+    offProcessed(callback?: (result: QuaggaProcessedResult) => void): void;
     canvas: {
       dom: {
         overlay: HTMLCanvasElement;
