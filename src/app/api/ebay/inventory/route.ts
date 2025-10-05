@@ -5,13 +5,12 @@ import { getValidAccessToken } from '@/lib/ebay-server'
 import { EbayListingResponse } from '@/lib/ebay' // Adjust if needed
 
 export async function POST(request: Request) {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
         {
             cookies: {
-                // @ts-ignore - Suppress type error for build
                 get: (name) => cookieStore.get(name)?.value,
                 set: (name, value, options) => {
                     cookieStore.set({ name, value, ...options })
@@ -92,6 +91,6 @@ export async function POST(request: Request) {
         return NextResponse.json(result)
     } catch (error) {
         console.error('Error creating inventory item:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
     }
 }

@@ -7,7 +7,6 @@ import Image from "next/image";
 import { lookupBookByISBN, validateISBN, BookData, getSupabaseClient } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
-import Sidebar from "../components/Sidebar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 
@@ -320,8 +319,7 @@ export default function ScanPage() {
 
   return (
     <AuthGuard>
-      <Sidebar />
-      <div className="min-h-screen bg-gray-900 lg:pl-64">
+      <div className="min-h-screen bg-gray-900">
         <Header />
         <div className="max-w-7xl mx-auto p-4 lg:p-6 pt-16 lg:pt-6">
           {/* Page Header */}

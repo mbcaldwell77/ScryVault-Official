@@ -8,7 +8,8 @@ function isTokenExpired(expiresAt: string): boolean {
 }
 
 export async function getEbayToken(supabase: SupabaseClient, userId: string) {
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
         .from('ebay_tokens')
         .select('*')
         .eq('user_id', userId)
@@ -49,14 +50,15 @@ export async function refreshEbayToken(supabase: SupabaseClient, userId: string,
 
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000)
 
-    const { error: dbError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: dbError } = await (supabase as any)
         .from('ebay_tokens')
-        .update({
+        .upsert({
+            user_id: userId,
             access_token: tokens.access_token,
             refresh_token: tokens.refresh_token || refreshToken, // New refresh token if provided
             expires_at: expiresAt.toISOString()
         })
-        .eq('user_id', userId)
 
     if (dbError) {
         throw new Error('Failed to update tokens')

@@ -2,7 +2,6 @@
 
 import { User, Bell, Shield, Palette, HelpCircle, ExternalLink, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
-import Sidebar from "../components/Sidebar";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import { ebayAPI } from "@/lib/ebay";
@@ -74,8 +73,7 @@ export default function SettingsPage() {
   }
   return (
     <AuthGuard>
-      <Sidebar />
-      <div className="min-h-screen bg-gray-900 lg:pl-64">
+      <div className="min-h-screen bg-gray-900">
         <Header />
         {/* Page Header */}
         <div className="p-4 lg:p-6 pt-16 lg:pt-6 border-b border-gray-700/50">

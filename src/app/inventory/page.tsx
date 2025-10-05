@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { getSupabaseClient } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
-import Sidebar from "../components/Sidebar";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { ebayAPI, generateEbayListingTitle, calculateProfit, formatCurrency, getProfitColor } from "@/lib/ebay";
@@ -615,8 +614,7 @@ export default function InventoryPage() {
   };
   return (
     <AuthGuard>
-      <Sidebar />
-      <div className="min-h-screen bg-gray-900 lg:pl-64">
+      <div className="min-h-screen bg-gray-900">
         <Header />
         {/* Page Header */}
         <div className="p-4 lg:p-6 pt-16 lg:pt-6 border-b border-gray-700/50">
