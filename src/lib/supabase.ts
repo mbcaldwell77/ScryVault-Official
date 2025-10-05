@@ -2,6 +2,16 @@ import { createClient } from '@supabase/supabase-js'
 
 // Only initialize Supabase client if we're in a browser environment or have the required env vars
 const initSupabase = () => {
+  // Debug environment variables
+  if (typeof window !== 'undefined') {
+    console.log('🔍 Supabase Environment Check:', {
+      hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
+      urlLength: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
+      keyLength: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY?.length || 0
+    })
+  }
+
   if (typeof window === 'undefined' && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return null
   }
@@ -10,6 +20,12 @@ const initSupabase = () => {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('❌ Missing Supabase environment variables:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseAnonKey,
+      url: supabaseUrl ? 'SET' : 'MISSING',
+      key: supabaseAnonKey ? 'SET' : 'MISSING'
+    })
     return null
   }
 
@@ -36,7 +52,16 @@ const GOOGLE_BOOKS_BASE_URL = 'https://www.googleapis.com/books/v1/volumes'
 
 export const getSupabaseClient = () => {
   if (!supabase) {
-    throw new Error('Supabase client not initialized. Make sure environment variables are set.')
+    const errorMsg = 'Supabase client not initialized. Please check your environment variables:\n' +
+      '- NEXT_PUBLIC_SUPABASE_URL\n' +
+      '- NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY\n\n' +
+      'Current status:\n' +
+      `- URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'MISSING'}\n` +
+      `- Key: ${process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ? 'SET' : 'MISSING'}\n` +
+      `- Environment: ${typeof window !== 'undefined' ? 'BROWSER' : 'SERVER'}`
+
+    console.error('❌', errorMsg)
+    throw new Error(errorMsg)
   }
   return supabase
 }
