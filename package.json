@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ericblade/quagga2": "^1.8.4",
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.58.0",
     "clsx": "^2.0.0",
     "expo": "^53.0.20",

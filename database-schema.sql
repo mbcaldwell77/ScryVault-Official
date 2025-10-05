@@ -177,6 +177,19 @@ CREATE TABLE user_settings (
 );
 
 -- =============================================
+-- 7. EBAY_TOKENS TABLE
+-- =============================================
+CREATE TABLE ebay_tokens (
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    scopes TEXT[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =============================================
 -- INDEXES FOR PERFORMANCE
 -- =============================================
 
@@ -203,6 +216,9 @@ CREATE INDEX idx_listings_user_id ON listings(user_id);
 CREATE INDEX idx_listings_status ON listings(status);
 CREATE INDEX idx_listings_ebay_item_id ON listings(ebay_item_id);
 
+-- Ebay tokens table indexes
+CREATE INDEX idx_ebay_tokens_user_id ON ebay_tokens(user_id);
+
 -- =============================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- =============================================
@@ -214,6 +230,7 @@ ALTER TABLE scans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE listings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ebay_tokens ENABLE ROW LEVEL SECURITY;
 
 -- Categories (public read)
 CREATE POLICY "Categories are viewable by everyone" ON categories FOR SELECT USING (true);
@@ -252,6 +269,12 @@ CREATE POLICY "Users can view their own settings" ON user_settings FOR SELECT US
 CREATE POLICY "Users can insert their own settings" ON user_settings FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own settings" ON user_settings FOR UPDATE USING (auth.uid() = user_id);
 
+-- Ebay tokens policies
+CREATE POLICY "Users can manage their own ebay tokens" ON ebay_tokens
+    FOR ALL
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
 -- =============================================
 -- FUNCTIONS AND TRIGGERS
 -- =============================================
@@ -284,6 +307,10 @@ CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories FOR EACH
 CREATE TRIGGER update_photos_updated_at BEFORE UPDATE ON photos FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_listings_updated_at BEFORE UPDATE ON listings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_ebay_tokens_updated_at
+    BEFORE UPDATE ON ebay_tokens
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
 -- Trigger for search vector
 CREATE TRIGGER update_books_search_vector
@@ -322,6 +349,7 @@ ALTER TABLE scans DISABLE ROW LEVEL SECURITY;
 ALTER TABLE photos DISABLE ROW LEVEL SECURITY;
 ALTER TABLE listings DISABLE ROW LEVEL SECURITY;
 ALTER TABLE user_settings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE ebay_tokens DISABLE ROW LEVEL SECURITY;
 
 -- Temporarily make user_id nullable for development
 -- ALTER TABLE books ALTER COLUMN user_id DROP NOT NULL;
@@ -336,6 +364,7 @@ COMMENT ON TABLE scans IS 'Tracks individual book scanning events';
 COMMENT ON TABLE photos IS 'Images associated with books';
 COMMENT ON TABLE listings IS 'eBay listings created from books';
 COMMENT ON TABLE user_settings IS 'User preferences and app settings';
+COMMENT ON TABLE ebay_tokens IS 'eBay OAuth tokens for user authentication';
 
 COMMENT ON COLUMN books.search_vector IS 'Full-text search index for book titles, authors, and descriptions';
 COMMENT ON COLUMN books.condition IS 'Physical condition of the book (new, like_new, very_good, good, acceptable, poor)';

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ebayAPI } from '@/lib/ebay'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
 export default function EbayCallbackPage() {
@@ -43,19 +42,25 @@ export default function EbayCallbackPage() {
         console.log('🔄 Exchanging authorization code for tokens...')
         console.log('Code length:', code.length)
         console.log('Code preview:', code.substring(0, 20) + '...')
-        
-        // Exchange the authorization code for tokens
-        const tokens = await ebayAPI.exchangeCodeForTokens(code)
-        console.log('✅ Token exchange successful:', tokens)
+
+        const response = await fetch('/api/ebay/exchange', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ code })
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to exchange token')
+        }
 
         setStatus('success')
         setMessage('Successfully connected to eBay!')
 
-        // Redirect back to the page that initiated the auth (or dashboard)
         setTimeout(() => {
-          const returnUrl = state || '/settings'
-          console.log('Redirecting to:', returnUrl)
-          router.push(returnUrl)
+          router.push(state || '/settings')
         }, 2000)
 
       } catch (error) {
