@@ -129,6 +129,8 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
 
           if (!code) return;
 
+          console.log('Barcode detected:', code, 'Format:', result.codeResult?.format);
+
           // Prevent duplicate scans
           if (code === lastScannedRef.current) return;
 
@@ -137,13 +139,17 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
           // Clean up the scanned code (remove any non-numeric characters for ISBN)
           const cleanCode = code.replace(/[^0-9]/g, '');
 
-          // More robust ISBN validation
-          if (cleanCode.length === 10 || cleanCode.length === 13) {
-            console.log('Detected ISBN:', cleanCode);
+          console.log('Cleaned code:', cleanCode, 'Length:', cleanCode.length);
+
+          // More robust ISBN validation - accept 10 or 13 digit codes
+          if (cleanCode.length >= 10 && cleanCode.length <= 13) {
+            console.log('✅ Valid ISBN detected:', cleanCode);
             onScan(cleanCode);
             if (quaggaRef.current) {
               quaggaRef.current.stop();
             }
+          } else {
+            console.log('❌ Invalid ISBN length:', cleanCode.length);
           }
         };
 
@@ -180,29 +186,39 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
             type: "LiveStream",
             target: scannerRef.current,
             constraints: {
-              width: { min: 640, ideal: isMobile ? 1280 : 1920, max: 1920 },
-              height: { min: 480, ideal: isMobile ? 720 : 1080, max: 1080 },
-              facingMode: "environment",
-              aspectRatio: { min: 1, max: 2 }
+              width: { min: 640, ideal: 1280 },
+              height: { min: 480, ideal: 720 },
+              facingMode: "environment"
             },
+            area: {
+              top: "20%",
+              right: "10%",
+              left: "10%",
+              bottom: "20%"
+            }
           },
           locator: {
-            patchSize: isMobile ? "medium" : "large",
-            halfSample: isMobile ? true : false
+            patchSize: "medium",
+            halfSample: true
           },
-          numOfWorkers: isMobile ? 2 : (navigator.hardwareConcurrency || 4),
-          frequency: isMobile ? 10 : 10,
+          numOfWorkers: 0,
           decoder: {
             readers: [
               "ean_reader",
               "ean_8_reader",
               "code_128_reader",
-              "code_39_reader",
               "upc_reader",
               "upc_e_reader"
-            ]
+            ],
+            debug: {
+              drawBoundingBox: true,
+              showFrequency: false,
+              drawScanline: true,
+              showPattern: false
+            }
           },
-          locate: true
+          locate: true,
+          frequency: 10
         }, (err: unknown) => {
           if (err) {
             console.error('Quagga initialization error:', err);
@@ -324,29 +340,47 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
           ) : (
             <div className="space-y-4">
               {/* Instructions */}
-              <div className="text-center">
-                <p className="text-gray-300 mb-2">
-                  Point your camera at a book barcode
+              <div className="text-center space-y-2">
+                <p className="text-gray-300 font-medium">
+                  Position the barcode in the green frame
                 </p>
-                <p className="text-gray-400 text-sm">
-                  {isMobile
-                    ? 'Position the barcode within the green frame'
-                    : 'The scanner will automatically detect ISBN barcodes'}
-                </p>
+                <div className="text-gray-400 text-sm space-y-1">
+                  <p>📱 Hold your phone steady</p>
+                  <p>💡 Ensure good lighting</p>
+                  <p>📏 Keep 4-6 inches away</p>
+                </div>
               </div>
 
               {/* Scanner Viewport */}
               <div className="relative">
                 <div
                   ref={scannerRef}
-                  className={`w-full ${isMobile ? 'h-[400px] sm:h-[500px]' : 'h-[480px]'} bg-black rounded-lg overflow-hidden`}
+                  className={`w-full ${isMobile ? 'h-[450px]' : 'h-[480px]'} bg-black rounded-lg overflow-hidden`}
                 />
 
                 {/* Scanning Overlay */}
                 {isInitialized && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="border-2 border-emerald-400 rounded-lg p-3">
-                      <div className={`${isMobile ? 'w-56 h-32' : 'w-80 h-48'} border-2 border-emerald-400 rounded`}></div>
+                    {/* Dark overlay to focus on scan area */}
+                    <div className="absolute inset-0 bg-black/40"></div>
+
+                    {/* Scan frame */}
+                    <div className="relative z-10">
+                      <div className="border-4 border-emerald-400 rounded-lg shadow-lg shadow-emerald-400/50" style={{
+                        width: isMobile ? '280px' : '320px',
+                        height: isMobile ? '140px' : '192px'
+                      }}>
+                        {/* Corner markers */}
+                        <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-emerald-300"></div>
+                        <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-emerald-300"></div>
+                        <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-emerald-300"></div>
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-emerald-300"></div>
+
+                        {/* Scanning line animation */}
+                        <div className="absolute inset-0 overflow-hidden">
+                          <div className="absolute w-full h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-scan"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
