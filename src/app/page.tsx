@@ -26,9 +26,15 @@ export default function Home() {
               <a href="#features" className="text-gray-300 hover:text-emerald-400 transition-colors">Features</a>
             </nav>
             <div className="flex items-center space-x-4">
-              <Link href="/scan" className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
+              <button
+                onClick={() => {
+                  localStorage.setItem('scryvault_demo_mode', 'true');
+                  window.location.href = '/scan';
+                }}
+                className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25"
+              >
                 Try Demo
-              </Link>
+              </button>
               <Link href="/login" className="text-gray-300 hover:text-emerald-400 transition-colors">
                 Sign In
               </Link>
@@ -57,13 +63,19 @@ export default function Home() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Link href="/scan" className="group relative bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-xl shadow-emerald-500/25 hover:shadow-2xl hover:shadow-emerald-500/40">
+            <button
+              onClick={() => {
+                localStorage.setItem('scryvault_demo_mode', 'true');
+                window.location.href = '/scan';
+              }}
+              className="group relative bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-xl shadow-emerald-500/25 hover:shadow-2xl hover:shadow-emerald-500/40"
+            >
               <span className="relative z-10 flex items-center justify-center space-x-2">
                 <Camera className="w-5 h-5" />
                 <span>Try Demo</span>
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
-            </Link>
+            </button>
             <Link href="/login" className="bg-gray-800 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-700 transition-all duration-200 border border-gray-600">
               Sign In
             </Link>

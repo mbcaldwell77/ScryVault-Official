@@ -75,19 +75,34 @@ export default function ScanPage() {
   useEffect(() => {
     loadRecentBooks();
     loadCategories();
-  }, []);
+  }, [isDemoMode, user]);
 
   const loadRecentBooks = async () => {
     try {
+      // Use demo user ID if in demo mode, otherwise use authenticated user ID
+      const userId = isDemoMode ? '358c3277-8f08-4ee1-a839-b660b9155ec2' : user?.id;
+
+      if (!userId) {
+        console.log('No user ID available for loading recent books');
+        setRecentBooks([]);
+        return;
+      }
+
       const { data, error } = await getSupabaseClient()
         .from('books')
         .select('*')
-        .eq('user_id', user?.id) // Use current user ID
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(5);
 
       if (error) {
         console.error('Error loading recent books:', error);
+        console.error('Full error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         return;
       }
 
