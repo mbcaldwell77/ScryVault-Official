@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2 } from "lucide-react";
+import { Search, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2, Camera } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { lookupBookByISBN, validateISBN, BookData, getSupabaseClient } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import Sidebar from "../components/Sidebar";
-import BarcodeScanner from "@/components/BarcodeScanner";
+import BarcodeScanner from "@/components/BarcodeScannerNew";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 
@@ -427,20 +427,29 @@ export default function ScanPage() {
 
                     {/* Helpful hints */}
                     {!error && !isbnInput && (
-                      <div className="flex flex-col gap-2 mt-2">
+                      <div className="flex flex-col gap-3 mt-2">
                         <div className="flex items-center text-gray-400 text-xs">
                           <span className="mr-2">💡</span>
                           <span>Type ISBN and press <kbd className="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-xs">Enter</kbd> or click Look Up</span>
                         </div>
-                        <div className="text-center pt-2">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+                          <button
+                            onClick={() => setShowScanner(true)}
+                            className="text-cyan-400 hover:text-cyan-300 text-sm underline flex items-center gap-1"
+                          >
+                            <Camera className="w-3 h-3" />
+                            Scan barcode with camera
+                          </button>
+                          <span className="text-gray-600 text-xs hidden sm:inline">•</span>
                           <button
                             onClick={() => {
                               resetForm();
                               setShowManualForm(true);
                             }}
-                            className="text-emerald-400 hover:text-emerald-300 text-sm underline"
+                            className="text-emerald-400 hover:text-emerald-300 text-sm underline flex items-center gap-1"
                           >
-                            Don't have an ISBN? Enter book details manually
+                            <BookOpen className="w-3 h-3" />
+                            Enter details manually
                           </button>
                         </div>
                       </div>
