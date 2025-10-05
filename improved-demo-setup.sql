@@ -17,8 +17,11 @@ CREATE INDEX IF NOT EXISTS idx_listings_is_demo ON listings(is_demo);
 CREATE INDEX IF NOT EXISTS idx_user_settings_is_demo ON user_settings(is_demo);
 CREATE INDEX IF NOT EXISTS idx_ebay_tokens_is_demo ON ebay_tokens(is_demo);
 
--- 2.5. Add unique constraint to prevent duplicate ISBNs per user
-ALTER TABLE books ADD CONSTRAINT unique_isbn_per_user UNIQUE (isbn, user_id);
+-- 2.5. Note: ISBNs are not unique per user - multiple editions can share the same ISBN
+-- Removed constraint that was preventing legitimate duplicate ISBNs
+
+-- 2.6. Demo mode now uses client-side storage instead of persistent demo user
+-- No need for is_demo columns or demo user isolation
 
 -- 3. Drop existing policies (they'll be recreated with better security)
 DROP POLICY IF EXISTS "Users can view their own books or demo books" ON books;
