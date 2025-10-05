@@ -19,6 +19,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
   const [error, setError] = useState<string | null>(null);
   const [noCameraAvailable, setNoCameraAvailable] = useState(false);
   const lastScannedRef = useRef<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
   // Memoize mobile detection to prevent unnecessary recalculations
   const isMobile = useMemo(() => {
@@ -29,12 +30,18 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
     );
   }, []);
 
+  const addDebug = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setDebugInfo(prev => [...prev.slice(-4), `${timestamp}: ${message}`]);
+  };
+
   useEffect(() => {
     if (!isOpen) {
       setIsInitialized(false);
       setError(null);
       setNoCameraAvailable(false);
       lastScannedRef.current = null;
+      setDebugInfo([]);
       return;
     }
 
@@ -129,7 +136,9 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
 
           if (!code) return;
 
-          console.log('Barcode detected:', code, 'Format:', result.codeResult?.format);
+          const format = result.codeResult?.format;
+          addDebug(`📷 Detected: ${code} (${format})`);
+          console.log('Barcode detected:', code, 'Format:', format);
 
           // Prevent duplicate scans
           if (code === lastScannedRef.current) return;
@@ -139,16 +148,19 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
           // Clean up the scanned code (remove any non-numeric characters for ISBN)
           const cleanCode = code.replace(/[^0-9]/g, '');
 
+          addDebug(`🔢 Cleaned: ${cleanCode} (len: ${cleanCode.length})`);
           console.log('Cleaned code:', cleanCode, 'Length:', cleanCode.length);
 
           // More robust ISBN validation - accept 10 or 13 digit codes
           if (cleanCode.length >= 10 && cleanCode.length <= 13) {
+            addDebug(`✅ Valid ISBN!`);
             console.log('✅ Valid ISBN detected:', cleanCode);
             onScan(cleanCode);
             if (quaggaRef.current) {
               quaggaRef.current.stop();
             }
           } else {
+            addDebug(`❌ Invalid length: ${cleanCode.length}`);
             console.log('❌ Invalid ISBN length:', cleanCode.length);
           }
         };
@@ -223,10 +235,12 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
           if (err) {
             console.error('Quagga initialization error:', err);
             setError('Failed to initialize camera scanner.');
+            addDebug(`❌ Init failed: ${err}`);
             return;
           }
           if (!isComponentMounted) return;
 
+          addDebug('✅ Camera ready! Point at barcode');
           setIsInitialized(true);
           Quagga.onDetected(handleDetected);
           Quagga.onProcessed(handleProcessed);
@@ -400,6 +414,20 @@ export default function BarcodeScanner({ onScan, onClose, isOpen, onManualEntry 
                   </div>
                 )}
               </div>
+
+              {/* Debug Info (visible on mobile) */}
+              {debugInfo.length > 0 && (
+                <div className="bg-gray-900/90 rounded-lg p-3 border border-gray-600">
+                  <p className="text-xs text-gray-400 mb-1 font-semibold">Debug Log:</p>
+                  <div className="space-y-1">
+                    {debugInfo.map((info, i) => (
+                      <p key={i} className="text-xs text-gray-300 font-mono break-all">
+                        {info}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Manual Entry Fallback */}
               <div className="text-center pt-4 border-t border-gray-700">
