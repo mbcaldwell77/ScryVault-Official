@@ -22,20 +22,32 @@ export default function BarcodeScanner({
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const scannerRef = useRef<Html5Qrcode | null>(null);
 
-    useEffect(() => {
-        // Get available cameras on mount
-        initializeCameras();
+  useEffect(() => {
+    // Get available cameras on mount
+    initializeCameras();
 
-        return () => {
-            // Cleanup on unmount
-            if (scannerRef.current) {
-                scannerRef.current
-                    .stop()
-                    .catch((err) => console.error("Error stopping scanner:", err));
-            }
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    return () => {
+      // Cleanup on unmount
+      if (scannerRef.current) {
+        scannerRef.current
+          .stop()
+          .catch((err) => console.error("Error stopping scanner:", err));
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
+  // Auto-start scanning once camera is selected and DOM is ready
+  useEffect(() => {
+    if (!initializing && selectedCamera && !errorMessage && !scanning) {
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        startScanning(selectedCamera);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initializing, selectedCamera, errorMessage]);
 
     const initializeCameras = async () => {
         try {
@@ -61,43 +73,44 @@ export default function BarcodeScanner({
                 return;
             }
 
-      // iOS Safari workaround: Try direct camera access if enumeration fails
-      let cameraId: string;
-      
-      try {
-        const devices = await Html5Qrcode.getCameras();
-        console.log('Cameras found:', devices.length);
-        
-        if (devices && devices.length > 0) {
-          const cameraList = devices.map((device) => ({
-            id: device.id,
-            label: device.label || `Camera ${device.id}`,
-          }));
-          
-          setCameras(cameraList);
-          
-          // Prefer back camera on mobile
-          const backCamera = cameraList.find((cam) =>
-            cam.label.toLowerCase().includes("back")
-          );
-          cameraId = backCamera?.id || cameraList[0].id;
-          setSelectedCamera(cameraId);
-        } else {
-          throw new Error('No cameras enumerated');
-        }
-      } catch (enumErr) {
-        console.log('Camera enumeration failed, using facingMode fallback:', enumErr);
-        
-        // iOS Safari fallback: Use facingMode constraint instead of device ID
-        // This works when getCameras() fails
-        cameraId = 'environment'; // Special value that tells scanner to use back camera
-        setCameras([{ id: 'environment', label: 'Back Camera (iOS)' }]);
-        setSelectedCamera('environment');
-      }
-      
-      // Auto-start scanning with selected camera
-      await startScanning(cameraId);
-        } catch (err) {
+            // iOS Safari workaround: Try direct camera access if enumeration fails
+            let cameraId: string;
+
+            try {
+                const devices = await Html5Qrcode.getCameras();
+                console.log('Cameras found:', devices.length);
+
+                if (devices && devices.length > 0) {
+                    const cameraList = devices.map((device) => ({
+                        id: device.id,
+                        label: device.label || `Camera ${device.id}`,
+                    }));
+
+                    setCameras(cameraList);
+
+                    // Prefer back camera on mobile
+                    const backCamera = cameraList.find((cam) =>
+                        cam.label.toLowerCase().includes("back")
+                    );
+                    cameraId = backCamera?.id || cameraList[0].id;
+                    setSelectedCamera(cameraId);
+                } else {
+                    throw new Error('No cameras enumerated');
+                }
+            } catch (enumErr) {
+                console.log('Camera enumeration failed, using facingMode fallback:', enumErr);
+
+                // iOS Safari fallback: Use facingMode constraint instead of device ID
+                // This works when getCameras() fails
+                cameraId = 'environment'; // Special value that tells scanner to use back camera
+                setCameras([{ id: 'environment', label: 'Back Camera (iOS)' }]);
+                setSelectedCamera('environment');
+            }
+
+      // Don't auto-start here - wait for DOM to be ready
+      // startScanning will be called after render
+      setInitializing(false);
+    } catch (err) {
             console.error('Camera initialization error:', err);
 
             // Provide helpful error messages based on common issues
@@ -137,9 +150,9 @@ export default function BarcodeScanner({
             scannerRef.current = scanner;
 
             // iOS Safari: Use facingMode constraint instead of device ID
-            const cameraConfig = cameraId === 'environment' 
-              ? { facingMode: 'environment' } 
-              : cameraId;
+            const cameraConfig = cameraId === 'environment'
+                ? { facingMode: 'environment' }
+                : cameraId;
 
             await scanner.start(
                 cameraConfig,
@@ -240,6 +253,16 @@ export default function BarcodeScanner({
                 {/* Scanner Container */}
                 <div className="flex-1 flex items-center justify-center p-4">
                     <div className="w-full max-w-2xl">
+                        {/* Always render scanner container for DOM availability */}
+                        <div
+                            id="barcode-scanner-container"
+                            className="w-full bg-black rounded-xl overflow-hidden"
+                            style={{ 
+                              minHeight: "400px",
+                              display: (initializing || errorMessage) ? 'none' : 'block'
+                            }}
+                        />
+                        
                         {initializing ? (
                             <div className="flex flex-col items-center justify-center space-y-4 py-12">
                                 <Loader2 className="w-12 h-12 text-emerald-400 animate-spin" />
@@ -277,13 +300,6 @@ export default function BarcodeScanner({
                             </div>
                         ) : (
                             <>
-                                {/* Camera Feed */}
-                                <div
-                                    id="barcode-scanner-container"
-                                    className="w-full bg-black rounded-xl overflow-hidden"
-                                    style={{ minHeight: "400px" }}
-                                />
-
                                 {/* Controls */}
                                 <div className="mt-4 space-y-4">
                                     {/* Camera Selection */}
