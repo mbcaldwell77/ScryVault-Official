@@ -382,9 +382,9 @@ export default function InventoryPage() {
       if (isDemoMode) {
         // In demo mode, load from demo storage
         const demoData = await demoStorage.getData();
-        setCategories(demoData.categories);
-        setBooks(demoData.books);
-        setFilteredBooks(demoData.books);
+        setCategories(demoData.categories as unknown as Record<string, unknown>[]);
+        setBooks(demoData.books as unknown as Record<string, unknown>[]);
+        setFilteredBooks(demoData.books as unknown as Record<string, unknown>[]);
         setError(null);
         console.log('Loaded demo data:', { categories: demoData.categories.length, books: demoData.books.length });
       } else {
