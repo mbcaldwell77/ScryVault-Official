@@ -5,7 +5,7 @@
 export const FEATURES = {
     // Barcode scanner (Phase 1)
     // Set to true once scanner component is tested and integrated
-    BARCODE_SCANNER: true,
+    BARCODE_SCANNER: false,
 
     // eBay integration (Phase 2)
     // Set to true once OAuth and listing flows are fully tested
