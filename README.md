@@ -92,12 +92,15 @@ ScryVault is a comprehensive book inventory management platform designed for boo
 - **Memory Efficient**: Optimized component rendering
 - **Touch Responsive**: Immediate feedback on interactions
 
-### **⚠️ Barcode Scanning Status**
-Barcode scanning is **planned for Phase 1** using html5-qrcode library:
-- Web-based scanning has limitations but is achievable for many devices
-- Feature will be behind a feature flag for safe testing
-- Manual entry will always remain as a reliable fallback
-- Mobile app with native scanning planned for future
+### **Barcode Scanning**
+Barcode scanning is **implemented and ready** using html5-qrcode library:
+- Web-based scanning for ISBN barcodes
+- Feature is behind a feature flag (`BARCODE_SCANNER`)
+- Currently disabled by default for testing
+- Manual entry always available as fallback
+- Works on mobile and desktop browsers with camera access
+- Test page available at `/test-scanner`
+- See `docs/BARCODE_SETUP.md` for full guide
 
 ## 🚀 **Getting Started**
 

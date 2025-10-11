@@ -10,6 +10,8 @@ import Header from "@/components/Header";
 import { cn } from "@/lib/utils";
 import { demoStorage } from "@/lib/demo-storage";
 import { useAuth } from "@/lib/auth-context";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import BarcodeScanner from "@/components/BarcodeScanner";
 
 // Note: Sidebar component removed in favor of Header for authentication
 
@@ -44,6 +46,7 @@ export default function ScanPage() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [isbnValid, setIsbnValid] = useState<boolean | null>(null);
   const isbnInputRef = useRef<HTMLInputElement>(null);
+  const [showScanner, setShowScanner] = useState(false);
   const [manualBookData, setManualBookData] = useState<ManualBookData>({
     title: '',
     authors: [],
@@ -448,6 +451,22 @@ export default function ScanPage() {
 
               {/* ISBN Input Section */}
               <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-8 mb-6 lg:mb-8">
+                {/* Scanner Button (if feature enabled) */}
+                {isFeatureEnabled('BARCODE_SCANNER') && (
+                  <div className="mb-6">
+                    <button
+                      onClick={() => setShowScanner(true)}
+                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-blue-500/25 flex items-center justify-center space-x-2"
+                    >
+                      <Search className="w-5 h-5" />
+                      <span>Scan Barcode</span>
+                    </button>
+                    <p className="text-center text-gray-400 text-sm mt-2">
+                      Or enter ISBN manually below
+                    </p>
+                  </div>
+                )}
+                
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -916,6 +935,30 @@ export default function ScanPage() {
           </div>
         )}
       </div>
+
+      {/* Barcode Scanner Modal */}
+      {showScanner && (
+        <BarcodeScanner
+          onScan={(isbn) => {
+            console.log("Scanned ISBN:", isbn);
+            setIsbnInput(isbn);
+            setShowScanner(false);
+            setError(null);
+            // Automatically trigger lookup after scan
+            setTimeout(() => {
+              handleISBNLookup();
+            }, 100);
+          }}
+          onError={(error) => {
+            console.error("Scanner error:", error);
+            setError(error);
+            setShowScanner(false);
+          }}
+          onClose={() => {
+            setShowScanner(false);
+          }}
+        />
+      )}
     </AuthGuard>
   );
 }
