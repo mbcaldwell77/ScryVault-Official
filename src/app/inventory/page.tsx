@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { demoStorage } from "@/lib/demo-storage";
 import { ebayAPI, generateEbayListingTitle, calculateProfit, formatCurrency, getProfitColor } from "@/lib/ebay";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 // Note: Sidebar component removed in favor of Header for authentication
 
@@ -747,7 +748,7 @@ export default function InventoryPage() {
         <div className="p-4 lg:p-6">
 
           {/* eBay Connection Notice */}
-          {ebayAuthStatus === 'disconnected' && books.length > 0 && (
+          {isFeatureEnabled('EBAY_INTEGRATION') && ebayAuthStatus === 'disconnected' && books.length > 0 && (
             <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-4 mb-6">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -1127,7 +1128,7 @@ export default function InventoryPage() {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
-                          {(book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
+                          {isFeatureEnabled('EBAY_INTEGRATION') && (book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
                             <button
                               onClick={() => handleEbayListing(book)}
                               disabled={ebayListingLoading === book.id}
@@ -1197,7 +1198,7 @@ export default function InventoryPage() {
                           <span className="text-gray-400">Profit:</span>
                           <span className="text-emerald-400 font-semibold ml-1">${profit.toFixed(2)} ({profitPercentage.toFixed(1)}%)</span>
                         </div>
-                        {ebayAuthStatus === 'connected' && (book.status as string) === 'draft' && (
+                        {isFeatureEnabled('EBAY_INTEGRATION') && ebayAuthStatus === 'connected' && (book.status as string) === 'draft' && (
                           <div className="col-span-2 mt-2 p-2 bg-gray-700/30 rounded-lg">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-400">eBay Profit:</span>
@@ -1285,7 +1286,9 @@ export default function InventoryPage() {
                           )}
                         </div>
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">eBay Profit</th>
+                      {isFeatureEnabled('EBAY_INTEGRATION') && (
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">eBay Profit</th>
+                      )}
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-40">Actions</th>
                     </tr>
                   </thead>
@@ -1333,27 +1336,29 @@ export default function InventoryPage() {
                             {Math.round((((book.asking_price as number) - (book.purchase_price as number)) / (book.asking_price as number)) * 100)}%
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          {ebayAuthStatus === 'connected' && (book.status as string) === 'draft' ? (() => {
-                            const ebayProfit = calculateProfit(
-                              (book.asking_price as number) || 0,
-                              (book.purchase_price as number) || 0,
-                              3.99 // Standard shipping cost
-                            )
-                            return (
-                              <div className="text-sm">
-                                <div className={`font-semibold ${getProfitColor(ebayProfit.netProfit)}`}>
-                                  {formatCurrency(ebayProfit.netProfit)}
+                        {isFeatureEnabled('EBAY_INTEGRATION') && (
+                          <td className="px-6 py-4">
+                            {ebayAuthStatus === 'connected' && (book.status as string) === 'draft' ? (() => {
+                              const ebayProfit = calculateProfit(
+                                (book.asking_price as number) || 0,
+                                (book.purchase_price as number) || 0,
+                                3.99 // Standard shipping cost
+                              )
+                              return (
+                                <div className="text-sm">
+                                  <div className={`font-semibold ${getProfitColor(ebayProfit.netProfit)}`}>
+                                    {formatCurrency(ebayProfit.netProfit)}
+                                  </div>
+                                  <div className="text-gray-400 text-xs">
+                                    {ebayProfit.profitMargin.toFixed(1)}% margin
+                                  </div>
                                 </div>
-                                <div className="text-gray-400 text-xs">
-                                  {ebayProfit.profitMargin.toFixed(1)}% margin
-                                </div>
-                              </div>
-                            )
-                          })() : (
-                            <span className="text-gray-500 text-sm">-</span>
-                          )}
-                        </td>
+                              )
+                            })() : (
+                              <span className="text-gray-500 text-sm">-</span>
+                            )}
+                          </td>
+                        )}
                         <td className="px-6 py-4 w-40">
                           <div className="flex space-x-2">
                             <button
@@ -1370,7 +1375,7 @@ export default function InventoryPage() {
                             >
                               <Edit className="w-4 h-4" />
                             </button>
-                            {(book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
+                            {isFeatureEnabled('EBAY_INTEGRATION') && (book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
                               <button
                                 onClick={() => handleEbayListing(book)}
                                 disabled={ebayListingLoading === book.id}

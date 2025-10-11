@@ -7,7 +7,8 @@ import Header from "@/components/Header";
 import { ebayAPI } from "@/lib/ebay";
 import { useState, useEffect } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
-import { useAuth } from '@/lib/auth-context'
+import { useAuth } from '@/lib/auth-context';
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 export default function SettingsPage() {
   const [ebayAuthStatus, setEbayAuthStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking')
@@ -127,118 +128,120 @@ export default function SettingsPage() {
             </div>
 
             {/* eBay Integration */}
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                <ExternalLink className="w-5 h-5 mr-3 text-orange-400" />
-                eBay Integration
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    {ebayAuthStatus === 'checking' && (
-                      <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-                    )}
-                    {ebayAuthStatus === 'connected' && (
-                      <CheckCircle className="w-5 h-5 text-emerald-400" />
-                    )}
-                    {ebayAuthStatus === 'disconnected' && (
-                      <XCircle className="w-5 h-5 text-red-400" />
-                    )}
-                    <div>
-                      <p className="text-white font-medium">
-                        {ebayAuthStatus === 'checking' && 'Checking connection...'}
-                        {ebayAuthStatus === 'connected' && 'Connected to eBay'}
-                        {ebayAuthStatus === 'disconnected' && 'Not connected to eBay'}
-                      </p>
-                      <p className="text-gray-400 text-sm">
-                        {ebayAuthStatus === 'connected'
-                          ? 'Ready to create and manage eBay listings'
-                          : 'Connect your eBay account to enable automated listings'
-                        }
-                      </p>
+            {isFeatureEnabled('EBAY_INTEGRATION') && (
+              <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <ExternalLink className="w-5 h-5 mr-3 text-orange-400" />
+                  eBay Integration
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      {ebayAuthStatus === 'checking' && (
+                        <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                      )}
+                      {ebayAuthStatus === 'connected' && (
+                        <CheckCircle className="w-5 h-5 text-emerald-400" />
+                      )}
+                      {ebayAuthStatus === 'disconnected' && (
+                        <XCircle className="w-5 h-5 text-red-400" />
+                      )}
+                      <div>
+                        <p className="text-white font-medium">
+                          {ebayAuthStatus === 'checking' && 'Checking connection...'}
+                          {ebayAuthStatus === 'connected' && 'Connected to eBay'}
+                          {ebayAuthStatus === 'disconnected' && 'Not connected to eBay'}
+                        </p>
+                        <p className="text-gray-400 text-sm">
+                          {ebayAuthStatus === 'connected'
+                            ? 'Ready to create and manage eBay listings'
+                            : 'Connect your eBay account to enable automated listings'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      {ebayAuthStatus === 'connected' ? (
+                        <button
+                          onClick={handleEbayDisconnect}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                        >
+                          Disconnect
+                        </button>
+                      ) : (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={handleEbayConnect}
+                            disabled={ebayAuthLoading}
+                            className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center"
+                          >
+                            {ebayAuthLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Connect eBay
+                          </button>
+                          <button
+                            onClick={async () => {
+                              const result = await ebayAPI.testConnection()
+                              alert(result.message)
+                            }}
+                            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                          >
+                            Test API
+                          </button>
+                          <button
+                            onClick={() => {
+                              const clientId = process.env.NEXT_PUBLIC_EBAY_APP_ID!
+                              const ruName = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
+                              const scope = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
+                              const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scope)}&state=/settings`
+                              console.log('Auth URL:', authUrl)
+                              console.log('🌐 Opening eBay OAuth page...')
+                              window.open(authUrl, '_blank')
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                          >
+                            Test OAuth
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex space-x-2">
-                    {ebayAuthStatus === 'connected' ? (
-                      <button
-                        onClick={handleEbayDisconnect}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-                      >
-                        Disconnect
-                      </button>
-                    ) : (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={handleEbayConnect}
-                          disabled={ebayAuthLoading}
-                          className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center"
-                        >
-                          {ebayAuthLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                          Connect eBay
-                        </button>
-                        <button
-                          onClick={async () => {
-                            const result = await ebayAPI.testConnection()
-                            alert(result.message)
-                          }}
-                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-                        >
-                          Test API
-                        </button>
-                        <button
-                          onClick={() => {
-                            const clientId = process.env.NEXT_PUBLIC_EBAY_APP_ID!
-                            const ruName = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
-                            const scope = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
-                            const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scope)}&state=/settings`
-                            console.log('Auth URL:', authUrl)
-                            console.log('🌐 Opening eBay OAuth page...')
-                            window.open(authUrl, '_blank')
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-                        >
-                          Test OAuth
-                        </button>
+
+                  {ebayAuthStatus === 'connected' && (
+                    <>
+                      <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                        <div>
+                          <p className="text-white font-medium">Seller Policies</p>
+                          <p className="text-gray-400 text-sm">Configure your eBay seller policies</p>
+                        </div>
+                        <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
+                          Configure →
+                        </Link>
                       </div>
-                    )}
-                  </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                        <div>
+                          <p className="text-white font-medium">Listing Templates</p>
+                          <p className="text-gray-400 text-sm">Set up automated listing templates</p>
+                        </div>
+                        <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
+                          Manage →
+                        </Link>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                        <div>
+                          <p className="text-white font-medium">Fee Calculator</p>
+                          <p className="text-gray-400 text-sm">Calculate eBay fees for your listings</p>
+                        </div>
+                        <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
+                          Calculate →
+                        </Link>
+                      </div>
+                    </>
+                  )}
                 </div>
-
-                {ebayAuthStatus === 'connected' && (
-                  <>
-                    <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                      <div>
-                        <p className="text-white font-medium">Seller Policies</p>
-                        <p className="text-gray-400 text-sm">Configure your eBay seller policies</p>
-                      </div>
-                      <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
-                        Configure →
-                      </Link>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                      <div>
-                        <p className="text-white font-medium">Listing Templates</p>
-                        <p className="text-gray-400 text-sm">Set up automated listing templates</p>
-                      </div>
-                      <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
-                        Manage →
-                      </Link>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                      <div>
-                        <p className="text-white font-medium">Fee Calculator</p>
-                        <p className="text-gray-400 text-sm">Calculate eBay fees for your listings</p>
-                      </div>
-                      <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
-                        Calculate →
-                      </Link>
-                    </div>
-                  </>
-                )}
               </div>
-            </div>
+            )}
 
             {/* Notification Settings */}
             <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">

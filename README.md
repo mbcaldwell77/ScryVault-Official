@@ -92,16 +92,12 @@ ScryVault is a comprehensive book inventory management platform designed for boo
 - **Memory Efficient**: Optimized component rendering
 - **Touch Responsive**: Immediate feedback on interactions
 
-### **⚠️ Barcode Scanning Note**
-Web-based barcode scanning is **not currently supported** due to browser limitations:
-- Poor camera quality and autofocus via WebRTC
-- Unreliable detection accuracy on mobile browsers
-- Inconsistent performance across devices
-
-**Recommended alternatives:**
-- **Manual entry** (current method): Fast, reliable, works everywhere
-- **Native mobile app** (future): React Native with ML Kit for professional barcode scanning
-- **Photo upload** (potential): Server-side OCR processing
+### **⚠️ Barcode Scanning Status**
+Barcode scanning is **planned for Phase 1** using html5-qrcode library:
+- Web-based scanning has limitations but is achievable for many devices
+- Feature will be behind a feature flag for safe testing
+- Manual entry will always remain as a reliable fallback
+- Mobile app with native scanning planned for future
 
 ## 🚀 **Getting Started**
 
@@ -150,22 +146,26 @@ EBAY_CLIENT_SECRET=your_ebay_client_secret
 scryvault-official/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
-│   │   ├── components/         # Page-specific components
-│   │   ├── dashboard/          # Dashboard pages
-│   │   ├── inventory/          # Inventory management
+│   │   ├── api/               # API routes (eBay, demo, etc.)
+│   │   ├── inventory/         # Inventory management
 │   │   ├── scan/              # Book scanning interface
-│   │   ├── analytics/         # Analytics and reporting
 │   │   └── settings/          # User settings
 │   ├── components/            # Shared components
 │   │   ├── AuthGuard.tsx      # Authentication wrapper
-│   │   ├── Header.tsx         # Mobile-responsive header
-│   │   └── Sidebar.tsx        # Collapsible navigation
+│   │   └── Header.tsx         # Mobile-responsive header
 │   └── lib/                   # Utilities and configurations
 │       ├── supabase.ts        # Supabase client
+│       ├── ebay.ts            # eBay client utilities
+│       ├── ebay-server.ts     # eBay server utilities
+│       ├── feature-flags.ts   # Feature flag system
 │       ├── auth-context.tsx   # Authentication context
 │       └── utils.ts           # Utility functions
-├── scryvault-mobile/          # React Native mobile app
+├── docs/                      # Documentation
+│   ├── CURRENT_STATE.md       # Current feature status
+│   └── EBAY_ARCHITECTURE.md   # eBay integration docs
 ├── database-schema.sql        # Database schema
+├── SCRYVAULT_EVERGREEN_PLAN.md # Architecture blueprint
+├── SCRYVAULT_ROADMAP.md       # Development history
 └── README.md                  # This file
 ```
 
@@ -179,18 +179,41 @@ scryvault-official/
 - **Demo Mode**: Sample data and demo-specific features
 - **Error Handling**: Comprehensive error management
 - **Performance Optimization**: Mobile-first performance
+- **Feature Flag System**: Clean development workflow with isolated features
 
-### **🚀 Next Priority: eBay Integration**
-- **OAuth 2.0 Flow**: eBay API authentication
-- **Listing Creation**: Automated eBay listing generation
-- **Profit Calculation**: Real-time profit margin calculations
-- **Inventory Sync**: Bidirectional inventory management
+### **⚠️ Known Limitations**
+- **No Barcode Scanner**: Manual ISBN entry only (planned for Phase 1)
+- **eBay Integration Incomplete**: OAuth implemented, listing flow needs testing (Phase 2)
+- **Edit Functionality**: Book editing not yet implemented
 
-### **📋 Future Roadmap**
-- **Phase 3**: Advanced analytics and reporting
-- **Phase 4**: React Native mobile app
-- **Phase 5**: Multi-marketplace integration
-- **Phase 6**: Enterprise features and team collaboration
+### **📋 Development Roadmap**
+
+#### **Phase 0: Stabilization** ✅ COMPLETE
+- Clean documentation structure (`docs/` directory)
+- Feature flag system (`src/lib/feature-flags.ts`)
+- eBay UI hidden behind feature flags
+- Stable baseline for incremental development
+
+#### **Phase 1: Barcode Scanner** 📋 PLANNED
+- Install html5-qrcode library
+- Create isolated test page for camera testing
+- Build BarcodeScanner component
+- Integrate with scan page (behind feature flag)
+- Test on mobile devices
+- Enable feature flag after verification
+
+#### **Phase 2: eBay Integration Completion** 📋 PLANNED
+- Token management audit and documentation
+- Test all API routes independently
+- End-to-end OAuth flow testing
+- Listing creation flow testing (inventory → offer → publish)
+- Enable feature flag after verification
+
+#### **Phase 3: Testing & Polish** 📋 PLANNED
+- Integration testing of all features
+- Documentation updates
+- Performance optimization
+- Production deployment
 
 ## 🔧 **Development**
 
