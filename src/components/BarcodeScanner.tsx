@@ -15,26 +15,26 @@ export default function BarcodeScanner({
     onError,
     onClose,
 }: BarcodeScannerProps) {
-    const [scanning, setScanning] = useState(false);
     const [initializing, setInitializing] = useState(true);
     const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
     const [selectedCamera, setSelectedCamera] = useState<string>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const scannerRef = useRef<Html5Qrcode | null>(null);
 
-    useEffect(() => {
-        // Get available cameras on mount
-        initializeCameras();
+  useEffect(() => {
+    // Get available cameras on mount
+    initializeCameras();
 
-        return () => {
-            // Cleanup on unmount
-            if (scannerRef.current) {
-                scannerRef.current
-                    .stop()
-                    .catch((err) => console.error("Error stopping scanner:", err));
-            }
-        };
-    }, []);
+    return () => {
+      // Cleanup on unmount
+      if (scannerRef.current) {
+        scannerRef.current
+          .stop()
+          .catch((err) => console.error("Error stopping scanner:", err));
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
     const initializeCameras = async () => {
         try {
@@ -108,9 +108,8 @@ export default function BarcodeScanner({
                     // Stop scanning
                     stopScanning();
                 },
-                (errorMessage) => {
+                () => {
                     // This fires frequently while scanning, so we don't show it to the user
-                    // console.debug('Scan attempt:', errorMessage);
                 }
             );
         } catch (err) {
@@ -202,7 +201,7 @@ export default function BarcodeScanner({
                                         </p>
                                         <ul className="text-sm text-gray-300 space-y-1 list-disc list-inside">
                                             <li>Grant camera permissions in browser settings</li>
-                                            <li>Ensure you're using HTTPS (required for camera access)</li>
+                                            <li>Ensure you&apos;re using HTTPS (required for camera access)</li>
                                             <li>Try a different browser or device</li>
                                             <li>Close this and use manual ISBN entry instead</li>
                                         </ul>

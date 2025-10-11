@@ -79,6 +79,7 @@ export default function ScanPage() {
   useEffect(() => {
     loadRecentBooks();
     loadCategories();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDemoMode, user]);
 
   const loadRecentBooks = async () => {
@@ -253,7 +254,7 @@ export default function ScanPage() {
             purchase_price: bookDataToSave.purchasePrice,
             asking_price: bookDataToSave.askingPrice,
             category: bookDataToSave.category_id ?
-              categories.find((c: any) => c.id === bookDataToSave.category_id)?.name : undefined,
+              categories.find((c: Record<string, unknown>) => c.id === bookDataToSave.category_id)?.name : undefined,
             tags: [],
             status: 'draft'
           };

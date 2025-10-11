@@ -73,17 +73,16 @@ export default function TestScannerPage() {
                     fps: 10,
                     qrbox: { width: 250, height: 250 },
                 },
-                (decodedText, decodedResult) => {
+                (decodedText) => {
                     addLog(`Scanned: ${decodedText}`);
                     setResult(decodedText);
 
                     // Auto-stop after successful scan
                     stopScanning();
                 },
-                (errorMessage) => {
-                    // This fires frequently while scanning, so we don't log it
-                    // addLog(`Scan error: ${errorMessage}`);
-                }
+        () => {
+          // This fires frequently while scanning, so we don't log it
+        }
             );
 
             addLog("Scanner started successfully");
@@ -310,12 +309,12 @@ export default function TestScannerPage() {
                             </h3>
                             <ul className="text-blue-300 space-y-2 text-sm">
                                 <li>• Select a camera from the dropdown</li>
-                                <li>• Click "Start Scanner" to begin</li>
+                                <li>• Click &quot;Start Scanner&quot; to begin</li>
                                 <li>• Point camera at an ISBN barcode (on book or screen)</li>
                                 <li>• Scanner will automatically detect and display the code</li>
                                 <li>• Check debug logs for detailed information</li>
                                 <li>• Test on both desktop and mobile browsers</li>
-                                <li>• Ensure you're using HTTPS for camera access</li>
+                                <li>• Ensure you&apos;re using HTTPS for camera access</li>
                             </ul>
                         </div>
                     </div>

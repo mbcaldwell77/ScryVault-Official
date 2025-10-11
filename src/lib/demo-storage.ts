@@ -198,7 +198,7 @@ export class DemoStorage {
     // Clear demo data
     public clearData(): void {
         this.data = null;
-        
+
         // Only access localStorage in browser environment
         if (typeof window !== 'undefined') {
             localStorage.removeItem(DEMO_STORAGE_KEY);
@@ -211,7 +211,7 @@ export class DemoStorage {
         if (typeof window === 'undefined') {
             return;
         }
-        
+
         try {
             const stored = localStorage.getItem(DEMO_STORAGE_KEY);
             if (stored) {
@@ -228,7 +228,7 @@ export class DemoStorage {
         if (typeof window === 'undefined') {
             return;
         }
-        
+
         if (this.data) {
             try {
                 localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(this.data));

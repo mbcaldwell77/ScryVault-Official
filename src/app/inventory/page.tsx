@@ -195,6 +195,7 @@ export default function InventoryPage() {
   useEffect(() => {
     fetchData();
     checkEbayAuthStatus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check eBay authentication status
@@ -231,9 +232,6 @@ export default function InventoryPage() {
     try {
       setEbayListingLoading(book.id as string)
 
-      // Generate SKU for the listing
-      const sku = `SCRY-${book.id}-${Date.now()}`
-
       // Create inventory item via API
       const inventoryRes = await fetch('/api/ebay/inventory', {
         method: 'POST',
@@ -243,7 +241,7 @@ export default function InventoryPage() {
 
       if (!inventoryRes.ok) throw new Error('Failed to create inventory')
 
-      const inventory = await inventoryRes.json()
+      await inventoryRes.json()
 
       // Create offer
       const offerRes = await fetch('/api/ebay/offer', {
@@ -452,7 +450,7 @@ export default function InventoryPage() {
       if (isDemoMode) {
         // In demo mode, add categories to demo storage
         const currentData = await demoStorage.getData();
-        const existingCategoryNames = currentData.categories.map((c: any) => c.name);
+        const existingCategoryNames = currentData.categories.map((c: Record<string, unknown>) => c.name);
 
         for (const category of missingCategories) {
           if (!existingCategoryNames.includes(category.name)) {
@@ -638,7 +636,7 @@ export default function InventoryPage() {
             condition: book.condition,
             purchase_price: book.purchase_price,
             asking_price: book.asking_price,
-            category: categories.find((c: any) => c.id === book.category_id)?.name,
+            category: categories.find((c: Record<string, unknown>) => c.id === book.category_id)?.name,
             tags: book.tags,
             status: book.status
           };
