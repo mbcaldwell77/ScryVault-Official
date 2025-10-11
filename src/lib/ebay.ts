@@ -1,5 +1,3 @@
-import { getSupabaseClient } from './supabase'
-
 // eBay API Configuration
 const EBAY_APP_ID = process.env.NEXT_PUBLIC_EBAY_APP_ID!
 

@@ -21,20 +21,20 @@ export default function BarcodeScanner({
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  useEffect(() => {
-    // Get available cameras on mount
-    initializeCameras();
+    useEffect(() => {
+        // Get available cameras on mount
+        initializeCameras();
 
-    return () => {
-      // Cleanup on unmount
-      if (scannerRef.current) {
-        scannerRef.current
-          .stop()
-          .catch((err) => console.error("Error stopping scanner:", err));
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        return () => {
+            // Cleanup on unmount
+            if (scannerRef.current) {
+                scannerRef.current
+                    .stop()
+                    .catch((err) => console.error("Error stopping scanner:", err));
+            }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const initializeCameras = async () => {
         try {

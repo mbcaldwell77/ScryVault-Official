@@ -18,6 +18,7 @@ export async function GET() {
         })
     } catch (e) {
         console.error('Config test error:', e)
-        return NextResponse.json({ success: false, message: `Error: ${e.message}` }, { status: 500 })
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error'
+        return NextResponse.json({ success: false, message: `Error: ${errorMessage}` }, { status: 500 })
     }
 }

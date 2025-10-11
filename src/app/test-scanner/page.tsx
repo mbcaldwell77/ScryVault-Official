@@ -80,9 +80,9 @@ export default function TestScannerPage() {
                     // Auto-stop after successful scan
                     stopScanning();
                 },
-        () => {
-          // This fires frequently while scanning, so we don't log it
-        }
+                () => {
+                    // This fires frequently while scanning, so we don't log it
+                }
             );
 
             addLog("Scanner started successfully");
@@ -172,8 +172,8 @@ export default function TestScannerPage() {
                             onClick={scanning ? stopScanning : startScanning}
                             disabled={!selectedCamera}
                             className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${scanning
-                                    ? "bg-red-600 hover:bg-red-700 text-white"
-                                    : "bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                ? "bg-red-600 hover:bg-red-700 text-white"
+                                : "bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 }`}
                         >
                             <Camera className="w-5 h-5 mr-2" />
@@ -214,8 +214,8 @@ export default function TestScannerPage() {
                                 <div className="flex items-center space-x-4 text-sm">
                                     <span
                                         className={`${validateISBN(result)
-                                                ? "text-emerald-400"
-                                                : "text-red-400"
+                                            ? "text-emerald-400"
+                                            : "text-red-400"
                                             }`}
                                     >
                                         {validateISBN(result) ? "✓ Valid ISBN" : "✗ Invalid ISBN"}

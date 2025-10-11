@@ -195,7 +195,7 @@ export default function InventoryPage() {
   useEffect(() => {
     fetchData();
     checkEbayAuthStatus();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check eBay authentication status
