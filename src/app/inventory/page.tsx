@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 import { demoStorage } from "@/lib/demo-storage";
 import { ebayAPI, generateEbayListingTitle, calculateProfit, formatCurrency, getProfitColor } from "@/lib/ebay";
 import { isFeatureEnabled } from "@/lib/feature-flags";
+import { DemoCategory } from "@/lib/demo-storage";
 
 // Note: Sidebar component removed in favor of Header for authentication
 
@@ -441,16 +442,16 @@ export default function InventoryPage() {
   const addMissingCategories = async () => {
     try {
       const missingCategories = [
-        { name: 'Fantasy', description: 'Fantasy novels, magical worlds, and supernatural fiction', color: '#a855f7' },
-        { name: 'Vintage', description: 'Classic and vintage books from previous decades', color: '#fbbf24' },
-        { name: 'Antique', description: 'Rare and antique books with historical value', color: '#dc2626' },
-        { name: 'Activity', description: 'Activity books, workbooks, and interactive materials', color: '#059669' }
+        { id: crypto.randomUUID(), name: 'Fantasy', description: 'Fantasy novels, magical worlds, and supernatural fiction', color: '#a855f7' },
+        { id: crypto.randomUUID(), name: 'Vintage', description: 'Classic and vintage books from previous decades', color: '#fbbf24' },
+        { id: crypto.randomUUID(), name: 'Antique', description: 'Rare and antique books with historical value', color: '#dc2626' },
+        { id: crypto.randomUUID(), name: 'Activity', description: 'Activity books, workbooks, and interactive materials', color: '#059669' }
       ];
 
       if (isDemoMode) {
         // In demo mode, add categories to demo storage
         const currentData = await demoStorage.getData();
-        const existingCategoryNames = currentData.categories.map((c: Record<string, unknown>) => c.name);
+        const existingCategoryNames = currentData.categories.map((c: DemoCategory) => c.name);
 
         for (const category of missingCategories) {
           if (!existingCategoryNames.includes(category.name)) {
@@ -489,9 +490,7 @@ export default function InventoryPage() {
     try {
       setLoading(true);
 
-      if (isDemoMode) {
-        // In demo mode, add sample books to demo storage
-        const sampleBooks = [
+      const sampleBooks = [
           {
             title: "The Great Gatsby",
             authors: ["F. Scott Fitzgerald"],
@@ -622,6 +621,7 @@ export default function InventoryPage() {
           }
         ];
 
+      if (isDemoMode) {
         // Add each book to demo storage
         for (const book of sampleBooks) {
           const demoBook = {
@@ -636,7 +636,7 @@ export default function InventoryPage() {
             condition: book.condition,
             purchase_price: book.purchase_price,
             asking_price: book.asking_price,
-            category: categories.find((c: Record<string, unknown>) => c.id === book.category_id)?.name,
+            category: (categories.find((c: Record<string, unknown>) => c.id === book.category_id)?.name as string | undefined),
             tags: book.tags,
             status: book.status
           };

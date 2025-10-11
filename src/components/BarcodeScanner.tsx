@@ -15,6 +15,7 @@ export default function BarcodeScanner({
     onError,
     onClose,
 }: BarcodeScannerProps) {
+    const [scanning, setScanning] = useState(false);
     const [initializing, setInitializing] = useState(true);
     const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
     const [selectedCamera, setSelectedCamera] = useState<string>("");

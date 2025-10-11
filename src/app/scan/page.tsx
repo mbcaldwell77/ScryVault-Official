@@ -90,7 +90,7 @@ export default function ScanPage() {
         const recentDemoBooks = demoData.books
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           .slice(0, 5);
-        setRecentBooks(recentDemoBooks);
+        setRecentBooks(recentDemoBooks as unknown as Record<string, unknown>[]);
         console.log('Loaded demo books:', recentDemoBooks.length);
       } else {
         // For real users, load from database
@@ -253,8 +253,8 @@ export default function ScanPage() {
             condition_notes: bookDataToSave.condition_notes,
             purchase_price: bookDataToSave.purchasePrice,
             asking_price: bookDataToSave.askingPrice,
-            category: bookDataToSave.category_id ?
-              categories.find((c: Record<string, unknown>) => c.id === bookDataToSave.category_id)?.name : undefined,
+            category: (bookDataToSave.category_id ?
+              categories.find((c: Record<string, unknown>) => c.id === bookDataToSave.category_id)?.name : undefined) as string | undefined,
             tags: [],
             status: 'draft'
           };
