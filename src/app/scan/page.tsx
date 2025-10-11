@@ -466,7 +466,7 @@ export default function ScanPage() {
                     </p>
                   </div>
                 )}
-                
+
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-300 mb-2">

@@ -198,11 +198,20 @@ export class DemoStorage {
     // Clear demo data
     public clearData(): void {
         this.data = null;
-        localStorage.removeItem(DEMO_STORAGE_KEY);
-        localStorage.removeItem(DEMO_TIMESTAMP_KEY);
+        
+        // Only access localStorage in browser environment
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(DEMO_STORAGE_KEY);
+            localStorage.removeItem(DEMO_TIMESTAMP_KEY);
+        }
     }
 
     private loadFromStorage(): void {
+        // Only access localStorage in browser environment
+        if (typeof window === 'undefined') {
+            return;
+        }
+        
         try {
             const stored = localStorage.getItem(DEMO_STORAGE_KEY);
             if (stored) {
@@ -215,6 +224,11 @@ export class DemoStorage {
     }
 
     private saveToStorage(): void {
+        // Only access localStorage in browser environment
+        if (typeof window === 'undefined') {
+            return;
+        }
+        
         if (this.data) {
             try {
                 localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(this.data));

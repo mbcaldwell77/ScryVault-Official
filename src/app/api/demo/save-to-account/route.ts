@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/supabase';
 import { DemoBook, DemoCategory } from '@/lib/demo-storage';
 
 export async function POST(request: Request) {
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const supabase = createClient();
+        const supabase = getSupabaseClient();
 
         // Verify user is authenticated and matches the userId
         const { data: { user }, error: authError } = await supabase.auth.getUser();
