@@ -153,26 +153,30 @@ export default function BarcodeScanner({
             const cameraConfig = cameraId === 'environment'
                 ? { facingMode: 'environment' }
                 : cameraId;
-            
+
             console.log('Starting scanner with config:', cameraConfig);
 
             await scanner.start(
                 cameraConfig,
                 {
-                    fps: 10,
+                    fps: 30, // Higher FPS for better barcode detection on mobile
+                    // Larger scanning box for better visibility
                     qrbox: (viewfinderWidth, viewfinderHeight) => {
-                        // Make scanning box responsive
-                        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                        const qrboxSize = Math.floor(minEdge * 0.7);
+                        // Use 90% of width for better barcode capture
+                        const boxWidth = Math.floor(viewfinderWidth * 0.9);
+                        // Taller box for vertical barcodes
+                        const boxHeight = Math.floor(viewfinderHeight * 0.3);
                         return {
-                            width: qrboxSize,
-                            height: Math.floor(qrboxSize * 0.4), // Wider box for ISBN barcodes
+                            width: boxWidth,
+                            height: boxHeight,
                         };
                     },
-                    aspectRatio: 1.0,
                     // iOS-specific video constraints  
                     videoConstraints: {
-                        facingMode: 'environment'
+                        facingMode: 'environment',
+                        // Request higher resolution for better barcode detection
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
                     },
                     disableFlip: false,
                 },
@@ -193,7 +197,7 @@ export default function BarcodeScanner({
                     // This fires frequently while scanning, so we don't show it to the user
                 }
             );
-            
+
             // iOS fix: Ensure video element has required attributes after scanner creates it
             setTimeout(() => {
                 const videoElement = document.querySelector('#barcode-scanner-container video');

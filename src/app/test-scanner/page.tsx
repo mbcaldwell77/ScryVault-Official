@@ -64,18 +64,18 @@ export default function TestScannerPage() {
             setResult(null);
             addLog("Starting scanner...");
 
-      const scanner = new Html5Qrcode("scanner-container", /* verbose= */ true);
-      scannerRef.current = scanner;
+            const scanner = new Html5Qrcode("scanner-container", /* verbose= */ true);
+            scannerRef.current = scanner;
 
-      await scanner.start(
-        selectedCamera,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          videoConstraints: {
-            facingMode: selectedCamera === 'environment' ? 'environment' : undefined
-          },
-        },
+            await scanner.start(
+                selectedCamera,
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    videoConstraints: {
+                        facingMode: selectedCamera === 'environment' ? 'environment' : undefined
+                    },
+                },
                 (decodedText) => {
                     addLog(`Scanned: ${decodedText}`);
                     setResult(decodedText);
@@ -83,23 +83,23 @@ export default function TestScannerPage() {
                     // Auto-stop after successful scan
                     stopScanning();
                 },
-        () => {
-          // This fires frequently while scanning, so we don't log it
-        }
-      );
-      
-      // iOS fix: Ensure video element has required attributes
-      setTimeout(() => {
-        const videoElement = document.querySelector('#scanner-container video');
-        if (videoElement) {
-          addLog('Setting iOS video attributes');
-          videoElement.setAttribute('autoplay', '');
-          videoElement.setAttribute('muted', '');
-          videoElement.setAttribute('playsinline', '');
-        }
-      }, 100);
+                () => {
+                    // This fires frequently while scanning, so we don't log it
+                }
+            );
 
-      addLog("Scanner started successfully");
+            // iOS fix: Ensure video element has required attributes
+            setTimeout(() => {
+                const videoElement = document.querySelector('#scanner-container video');
+                if (videoElement) {
+                    addLog('Setting iOS video attributes');
+                    videoElement.setAttribute('autoplay', '');
+                    videoElement.setAttribute('muted', '');
+                    videoElement.setAttribute('playsinline', '');
+                }
+            }, 100);
+
+            addLog("Scanner started successfully");
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : String(err);
             setError(`Failed to start scanner: ${errorMsg}`);
