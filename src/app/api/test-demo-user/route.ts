@@ -40,6 +40,7 @@ export async function GET() {
         })
     } catch (e) {
         console.error('Server error:', e)
-        return NextResponse.json({ success: false, message: `Server error: ${e.message}` }, { status: 500 })
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error'
+        return NextResponse.json({ success: false, message: `Server error: ${errorMessage}` }, { status: 500 })
     }
 }
