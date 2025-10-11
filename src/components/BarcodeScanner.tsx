@@ -37,99 +37,96 @@ export default function BarcodeScanner({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-  const initializeCameras = async () => {
-    try {
-      console.log('Initializing cameras...');
-      console.log('HTTPS:', window.location.protocol === 'https:');
-      console.log('MediaDevices API:', !!navigator.mediaDevices);
-      
-      // Check for HTTPS first
-      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-        const error = 'Camera access requires HTTPS. Please use https:// or localhost.';
-        setErrorMessage(error);
-        onError(error);
-        setInitializing(false);
-        return;
-      }
-      
-      // Check if MediaDevices API is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        const error = 'Camera API not supported in this browser. Try Chrome, Safari, or Edge.';
-        setErrorMessage(error);
-        onError(error);
-        setInitializing(false);
-        return;
-      }
-      
-      // Try to request camera permission first (helps on some mobile browsers)
-      try {
-        await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-          .then(stream => {
-            // Got permission, stop the stream immediately
-            stream.getTracks().forEach(track => track.stop());
-            console.log('Camera permission granted');
-          });
-      } catch (permErr) {
-        console.log('Permission request:', permErr);
-        // Continue anyway - Html5Qrcode will handle it
-      }
-      
-      const devices = await Html5Qrcode.getCameras();
-      console.log('Cameras found:', devices.length);
-      
-      if (devices && devices.length > 0) {
-                const cameraList = devices.map((device) => ({
-                    id: device.id,
-                    label: device.label || `Camera ${device.id}`,
-                }));
+    const initializeCameras = async () => {
+        try {
+            console.log('Initializing cameras...');
+            console.log('HTTPS:', window.location.protocol === 'https:');
+            console.log('MediaDevices API:', !!navigator.mediaDevices);
 
-                setCameras(cameraList);
-
-                // Prefer back camera on mobile, otherwise use first camera
-                const backCamera = cameraList.find((cam) =>
-                    cam.label.toLowerCase().includes("back")
-                );
-                const defaultCamera = backCamera || cameraList[0];
-
-                setSelectedCamera(defaultCamera.id);
-
-                // Auto-start scanning with default camera
-                await startScanning(defaultCamera.id);
-            } else {
-                const error = "No cameras found on this device";
+            // Check for HTTPS first
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                const error = 'Camera access requires HTTPS. Please use https:// or localhost.';
                 setErrorMessage(error);
                 onError(error);
+                setInitializing(false);
+                return;
             }
-    } catch (err) {
-      console.error('Camera initialization error:', err);
+
+            // Check if MediaDevices API is available
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                const error = 'Camera API not supported in this browser. Try Chrome, Safari, or Edge.';
+                setErrorMessage(error);
+                onError(error);
+                setInitializing(false);
+                return;
+            }
+
+      // iOS Safari workaround: Try direct camera access if enumeration fails
+      let cameraId: string;
       
-      // Provide helpful error messages based on common issues
-      let errorMsg = 'Failed to access cameras. ';
-      
-      if (err instanceof Error) {
-        const errLower = err.message.toLowerCase();
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        console.log('Cameras found:', devices.length);
         
-        if (errLower.includes('permission') || errLower.includes('denied')) {
-          errorMsg = 'Camera permission denied. Please allow camera access in your browser settings and refresh the page.';
-        } else if (errLower.includes('https') || errLower.includes('secure')) {
-          errorMsg = 'Camera requires HTTPS. Please use the secure version of the site.';
-        } else if (errLower.includes('not found') || errLower.includes('no devices')) {
-          errorMsg = 'No cameras found on this device.';
-        } else if (errLower.includes('in use') || errLower.includes('already')) {
-          errorMsg = 'Camera is already in use by another app or tab. Please close other camera apps and try again.';
+        if (devices && devices.length > 0) {
+          const cameraList = devices.map((device) => ({
+            id: device.id,
+            label: device.label || `Camera ${device.id}`,
+          }));
+          
+          setCameras(cameraList);
+          
+          // Prefer back camera on mobile
+          const backCamera = cameraList.find((cam) =>
+            cam.label.toLowerCase().includes("back")
+          );
+          cameraId = backCamera?.id || cameraList[0].id;
+          setSelectedCamera(cameraId);
         } else {
-          errorMsg += err.message;
+          throw new Error('No cameras enumerated');
         }
-      } else {
-        errorMsg += String(err);
+      } catch (enumErr) {
+        console.log('Camera enumeration failed, using facingMode fallback:', enumErr);
+        
+        // iOS Safari fallback: Use facingMode constraint instead of device ID
+        // This works when getCameras() fails
+        cameraId = 'environment'; // Special value that tells scanner to use back camera
+        setCameras([{ id: 'environment', label: 'Back Camera (iOS)' }]);
+        setSelectedCamera('environment');
       }
       
-      setErrorMessage(errorMsg);
-      onError(errorMsg);
-    } finally {
-      setInitializing(false);
-    }
-  };
+      // Auto-start scanning with selected camera
+      await startScanning(cameraId);
+        } catch (err) {
+            console.error('Camera initialization error:', err);
+
+            // Provide helpful error messages based on common issues
+            let errorMsg = 'Failed to access cameras. ';
+
+            if (err instanceof Error) {
+                const errLower = err.message.toLowerCase();
+
+                if (errLower.includes('permission') || errLower.includes('denied')) {
+                    errorMsg = 'Camera permission denied. Please allow camera access in your browser settings and refresh the page.';
+                } else if (errLower.includes('https') || errLower.includes('secure')) {
+                    errorMsg = 'Camera requires HTTPS. Please use the secure version of the site.';
+                } else if (errLower.includes('not found') || errLower.includes('no devices')) {
+                    errorMsg = 'No cameras found on this device.';
+                } else if (errLower.includes('in use') || errLower.includes('already')) {
+                    errorMsg = 'Camera is already in use by another app or tab. Please close other camera apps and try again.';
+                } else {
+                    errorMsg += err.message;
+                }
+            } else {
+                errorMsg += String(err);
+            }
+
+            setErrorMessage(errorMsg);
+            onError(errorMsg);
+        } finally {
+            setInitializing(false);
+        }
+    };
 
     const startScanning = async (cameraId: string) => {
         try {
@@ -139,8 +136,13 @@ export default function BarcodeScanner({
             const scanner = new Html5Qrcode("barcode-scanner-container");
             scannerRef.current = scanner;
 
+            // iOS Safari: Use facingMode constraint instead of device ID
+            const cameraConfig = cameraId === 'environment' 
+              ? { facingMode: 'environment' } 
+              : cameraId;
+
             await scanner.start(
-                cameraId,
+                cameraConfig,
                 {
                     fps: 10,
                     qrbox: (viewfinderWidth, viewfinderHeight) => {
