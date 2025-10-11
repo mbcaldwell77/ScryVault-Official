@@ -22,32 +22,32 @@ export default function BarcodeScanner({
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  useEffect(() => {
-    // Get available cameras on mount
-    initializeCameras();
+    useEffect(() => {
+        // Get available cameras on mount
+        initializeCameras();
 
-    return () => {
-      // Cleanup on unmount
-      if (scannerRef.current) {
-        scannerRef.current
-          .stop()
-          .catch((err) => console.error("Error stopping scanner:", err));
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
-  // Auto-start scanning once camera is selected and DOM is ready
-  useEffect(() => {
-    if (!initializing && selectedCamera && !errorMessage && !scanning) {
-      // Small delay to ensure DOM is fully rendered
-      const timer = setTimeout(() => {
-        startScanning(selectedCamera);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initializing, selectedCamera, errorMessage]);
+        return () => {
+            // Cleanup on unmount
+            if (scannerRef.current) {
+                scannerRef.current
+                    .stop()
+                    .catch((err) => console.error("Error stopping scanner:", err));
+            }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Auto-start scanning once camera is selected and DOM is ready
+    useEffect(() => {
+        if (!initializing && selectedCamera && !errorMessage && !scanning) {
+            // Small delay to ensure DOM is fully rendered
+            const timer = setTimeout(() => {
+                startScanning(selectedCamera);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initializing, selectedCamera, errorMessage]);
 
     const initializeCameras = async () => {
         try {
@@ -107,10 +107,10 @@ export default function BarcodeScanner({
                 setSelectedCamera('environment');
             }
 
-      // Don't auto-start here - wait for DOM to be ready
-      // startScanning will be called after render
-      setInitializing(false);
-    } catch (err) {
+            // Don't auto-start here - wait for DOM to be ready
+            // startScanning will be called after render
+            setInitializing(false);
+        } catch (err) {
             console.error('Camera initialization error:', err);
 
             // Provide helpful error messages based on common issues
@@ -146,13 +146,15 @@ export default function BarcodeScanner({
             setScanning(true);
             setErrorMessage(null);
 
-            const scanner = new Html5Qrcode("barcode-scanner-container");
+            const scanner = new Html5Qrcode("barcode-scanner-container", /* verbose= */ true);
             scannerRef.current = scanner;
 
             // iOS Safari: Use facingMode constraint instead of device ID
             const cameraConfig = cameraId === 'environment'
                 ? { facingMode: 'environment' }
                 : cameraId;
+            
+            console.log('Starting scanner with config:', cameraConfig);
 
             await scanner.start(
                 cameraConfig,
@@ -168,6 +170,11 @@ export default function BarcodeScanner({
                         };
                     },
                     aspectRatio: 1.0,
+                    // iOS-specific video constraints  
+                    videoConstraints: {
+                        facingMode: 'environment'
+                    },
+                    disableFlip: false,
                 },
                 (decodedText) => {
                     // Successfully scanned
@@ -186,6 +193,17 @@ export default function BarcodeScanner({
                     // This fires frequently while scanning, so we don't show it to the user
                 }
             );
+            
+            // iOS fix: Ensure video element has required attributes after scanner creates it
+            setTimeout(() => {
+                const videoElement = document.querySelector('#barcode-scanner-container video');
+                if (videoElement) {
+                    console.log('Setting iOS-required video attributes');
+                    videoElement.setAttribute('autoplay', '');
+                    videoElement.setAttribute('muted', '');
+                    videoElement.setAttribute('playsinline', '');
+                }
+            }, 100);
         } catch (err) {
             const error = `Failed to start scanner: ${err instanceof Error ? err.message : String(err)}`;
             setErrorMessage(error);
@@ -257,12 +275,12 @@ export default function BarcodeScanner({
                         <div
                             id="barcode-scanner-container"
                             className="w-full bg-black rounded-xl overflow-hidden"
-                            style={{ 
-                              minHeight: "400px",
-                              display: (initializing || errorMessage) ? 'none' : 'block'
+                            style={{
+                                minHeight: "400px",
+                                display: (initializing || errorMessage) ? 'none' : 'block'
                             }}
                         />
-                        
+
                         {initializing ? (
                             <div className="flex flex-col items-center justify-center space-y-4 py-12">
                                 <Loader2 className="w-12 h-12 text-emerald-400 animate-spin" />
