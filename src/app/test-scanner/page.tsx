@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from "html5-qrcode";
-import { Camera, XCircle, CheckCircle, AlertCircle } from "lucide-react";
+import { Camera, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function TestScannerPage() {
     const [scanning, setScanning] = useState(false);
     const [result, setResult] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
@@ -26,73 +25,52 @@ export default function TestScannerPage() {
         };
     }, []);
 
-    const startScanning = async () => {
-        try {
-            setScanning(true);
-            setError(null);
-            setResult(null);
-            addLog("Starting html5-qrcode scanner...");
+    const startScanning = () => {
+        setScanning(true);
+        setResult(null);
+        addLog("Starting html5-qrcode scanner...");
 
-            const scanner = new Html5QrcodeScanner("reader", {
-                fps: 10,
-                qrbox: { width: 250, height: 150 },
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.UPC_E
-                ],
-                experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true,
-                },
-            }, false);
+        const scanner = new Html5QrcodeScanner("reader", {
+            fps: 10,
+            qrbox: { width: 250, height: 150 },
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E
+            ],
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true,
+            },
+        }, false);
 
-            scannerRef.current = scanner;
+        scannerRef.current = scanner;
 
-            try {
-                scanner.render(
-                    (decodedText) => {
-                        addLog(`Scanned: ${decodedText}`);
-                        setResult(decodedText);
-                        stopScanning();
-                    },
-                    (error) => {
-                        // Only log significant errors, not "no barcode detected"
-                        if (!error.includes("No MultiFormat Readers")) {
-                            addLog(`Scanner warning: ${error}`);
-                        }
-                    }
-                );
-
-                addLog("Scanner started successfully");
-
-            } catch (renderError) {
-                const errorMsg = renderError instanceof Error ? renderError.message : String(renderError);
-                setError(`Failed to start scanner: ${errorMsg}`);
-                addLog(`Failed to start scanner: ${errorMsg}`);
-                setScanning(false);
+        scanner.render(
+            (decodedText) => {
+                addLog(`Scanned: ${decodedText}`);
+                setResult(decodedText);
+                stopScanning();
+            },
+            (error) => {
+                // Only log significant errors
+                if (!error.includes("No MultiFormat Readers") &&
+                    !error.includes("NotFoundException")) {
+                    addLog(`Scanner warning: ${error}`);
+                }
             }
+        );
 
-        } catch (err) {
-            const errorMsg = err instanceof Error ? err.message : String(err);
-            setError(`Failed to start scanner: ${errorMsg}`);
-            addLog(`Failed to start scanner: ${errorMsg}`);
-            setScanning(false);
-        }
+        addLog("Scanner initialized successfully");
     };
 
     const stopScanning = () => {
-        try {
-            if (scannerRef.current) {
-                scannerRef.current.clear().catch(() => { });
-                scannerRef.current = null;
-                addLog("Scanner stopped");
-            }
-        } catch (err) {
-            addLog(`Error stopping scanner: ${err}`);
-        } finally {
-            setScanning(false);
+        if (scannerRef.current) {
+            scannerRef.current.clear().catch(() => { });
+            scannerRef.current = null;
+            addLog("Scanner stopped");
         }
+        setScanning(false);
     };
 
     const validateISBN = (isbn: string): boolean => {
@@ -154,7 +132,7 @@ export default function TestScannerPage() {
                     <div
                         id="reader"
                         className="w-full bg-black rounded-lg overflow-hidden"
-                        style={{ maxHeight: '500px' }}
+                        style={{ minHeight: '300px' }}
                     />
                 </div>
 
@@ -181,19 +159,6 @@ export default function TestScannerPage() {
                                         Length: {result.replace(/[-\s]/g, "").length} digits
                                     </span>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Error Display */}
-                {error && (
-                    <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-6 mb-6">
-                        <div className="flex items-start space-x-3">
-                            <XCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-red-400 mb-2">Error</h3>
-                                <p className="text-red-300">{error}</p>
                             </div>
                         </div>
                     </div>
@@ -233,7 +198,7 @@ export default function TestScannerPage() {
                                 {typeof window !== "undefined" &&
                                     window.location.protocol === "https:"
                                     ? "Yes ✓"
-                                    : "No (required for camera)"}
+                                    : "No (localhost OK)"}
                             </p>
                         </div>
                         <div>
@@ -276,10 +241,11 @@ export default function TestScannerPage() {
                                 <li>• Allow camera access when prompted</li>
                                 <li>• Point camera at ISBN barcode</li>
                                 <li>• Hold steady in center of frame</li>
-                                <li>• Detection is automatic with visual feedback</li>
+                                <li>• Detection is automatic</li>
                                 <li>• Optimized for EAN-13/ISBN-13 barcodes</li>
                                 <li>• Also supports EAN-8, UPC-A, UPC-E</li>
                                 <li>• <strong>iOS 15.1+ required</strong> for camera access</li>
+                                <li>• <strong>Library handles all permissions and errors</strong></li>
                             </ul>
                         </div>
                     </div>
