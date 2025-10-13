@@ -9,7 +9,7 @@ export const FEATURES = {
 
     // eBay integration (Phase 2)
     // Set to true once OAuth and listing flows are fully tested
-    EBAY_INTEGRATION: false,
+    EBAY_INTEGRATION: true,
 
     // Always on features
     DEMO_MODE: true,

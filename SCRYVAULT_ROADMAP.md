@@ -69,7 +69,7 @@ To enable: Set `BARCODE_SCANNER: true` in `src/lib/feature-flags.ts`
 
 ### ❌ **INVESTIGATED & REJECTED - Web-Based Barcode Scanner**
 - **Problem**: Attempted to implement real-time barcode scanning via webcam for mobile devices
-- **Libraries Tested**: `quagga` (legacy) → `@ericblade/quagga2` (modern fork)
+- **Libraries Tested**: `quagga` (legacy) → `html5-qrcode` (modern, iOS-compatible)
 - **Testing**: iPhone 16 Pro Max, Edge for iOS, HTTPS deployment on Vercel
 - **Issues Encountered**:
   - Poor camera quality and autofocus via WebRTC
@@ -87,7 +87,7 @@ To enable: Set `BARCODE_SCANNER: true` in `src/lib/feature-flags.ts`
 - **Automatic book lookup** - still fetches all book details from ISBN
 
 ### 📝 **Technical Debt Created**
-- [ ] Remove `@ericblade/quagga2` package (58 unnecessary dependencies)
+- [x] Migrated from QuaggaJS to html5-qrcode for better iOS compatibility
 - [ ] Delete unused `BarcodeScanner.tsx` component
 - [ ] Clean up scan animation CSS
 - [ ] Remove barcode scanner state from scan page

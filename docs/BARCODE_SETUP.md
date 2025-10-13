@@ -2,7 +2,7 @@
 
 ## Overview
 
-ScryVault now includes web-based barcode scanning using the html5-qrcode library. This feature allows users to scan ISBN barcodes directly from their device camera instead of manually typing them.
+ScryVault now includes web-based barcode scanning using the html5-qrcode library (based on ZXing). This feature allows users to scan ISBN barcodes directly from their device camera instead of manually typing them. html5-qrcode is actively maintained and provides excellent cross-browser support including iOS/Safari.
 
 ## Feature Status
 
@@ -63,17 +63,18 @@ Users can always:
 
 **✅ Fully Supported:**
 - Chrome/Edge (Desktop & Mobile)
-- Safari (iOS 11+)
+- Safari (iOS 15.1+)
 - Firefox (Desktop & Mobile)
 - Samsung Internet
 
 **⚠️ Limited Support:**
-- Older browsers may have issues
+- iOS Safari versions below 15.1 (camera access restricted)
 - Some browsers need manual permission grants
 
 **❌ Not Supported:**
 - HTTP sites (camera access blocked)
 - Browsers without MediaDevices API
+- iOS Safari versions below 15.1
 
 ## Testing
 
@@ -150,8 +151,8 @@ A dedicated test page is available at `/test-scanner` for:
 ### Components
 
 **`src/components/BarcodeScanner.tsx`**
-- Full-screen scanner modal
-- Camera selection
+- Full-screen scanner modal using html5-qrcode
+- Automatic iOS video attributes (playsinline, muted)
 - Auto-detection and scanning
 - Error handling
 - Mobile-optimized UI

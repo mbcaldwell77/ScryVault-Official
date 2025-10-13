@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
+import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Camera, XCircle, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function TestScannerPage() {
@@ -9,8 +9,7 @@ export default function TestScannerPage() {
     const [result, setResult] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
     const addLog = (message: string) => {
         const timestamp = new Date().toLocaleTimeString();
@@ -20,8 +19,9 @@ export default function TestScannerPage() {
 
     useEffect(() => {
         return () => {
-            if (readerRef.current) {
-                readerRef.current.reset();
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(() => { });
+                scannerRef.current = null;
             }
         };
     }, []);
@@ -31,29 +31,48 @@ export default function TestScannerPage() {
             setScanning(true);
             setError(null);
             setResult(null);
-            addLog("Starting ZXing scanner...");
+            addLog("Starting html5-qrcode scanner...");
 
-            const codeReader = new BrowserMultiFormatReader();
-            readerRef.current = codeReader;
+            const scanner = new Html5QrcodeScanner("reader", {
+                fps: 10,
+                qrbox: { width: 250, height: 150 },
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E
+                ],
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true,
+                },
+            }, false);
 
-            await codeReader.decodeFromVideoDevice(
-                null, // Use default camera
-                videoRef.current!,
-                (result, error) => {
-                    if (result) {
-                        const scanned = result.getText();
-                        addLog(`Scanned: ${scanned}`);
-                        setResult(scanned);
+            scannerRef.current = scanner;
+
+            try {
+                scanner.render(
+                    (decodedText) => {
+                        addLog(`Scanned: ${decodedText}`);
+                        setResult(decodedText);
                         stopScanning();
+                    },
+                    (error) => {
+                        // Only log significant errors, not "no barcode detected"
+                        if (!error.includes("No MultiFormat Readers")) {
+                            addLog(`Scanner warning: ${error}`);
+                        }
                     }
+                );
 
-                    if (error && !(error instanceof NotFoundException)) {
-                        addLog(`Scan error: ${error.message}`);
-                    }
-                }
-            );
+                addLog("Scanner started successfully");
 
-            addLog("Scanner started successfully");
+            } catch (renderError) {
+                const errorMsg = renderError instanceof Error ? renderError.message : String(renderError);
+                setError(`Failed to start scanner: ${errorMsg}`);
+                addLog(`Failed to start scanner: ${errorMsg}`);
+                setScanning(false);
+            }
+
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : String(err);
             setError(`Failed to start scanner: ${errorMsg}`);
@@ -64,8 +83,9 @@ export default function TestScannerPage() {
 
     const stopScanning = () => {
         try {
-            if (readerRef.current) {
-                readerRef.current.reset();
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(() => { });
+                scannerRef.current = null;
                 addLog("Scanner stopped");
             }
         } catch (err) {
@@ -106,10 +126,10 @@ export default function TestScannerPage() {
                 {/* Header */}
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold text-white mb-2">
-                        ZXing Barcode Scanner Test
+                        html5-qrcode Barcode Scanner Test
                     </h1>
                     <p className="text-gray-400">
-                        Test ZXing barcode scanning on mobile devices
+                        Test html5-qrcode barcode scanning on mobile devices (iOS 15.1+)
                     </p>
                 </div>
 
@@ -119,8 +139,8 @@ export default function TestScannerPage() {
                     <button
                         onClick={scanning ? stopScanning : startScanning}
                         className={`w-full px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center ${scanning
-                                ? "bg-red-600 hover:bg-red-700 text-white"
-                                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                            ? "bg-red-600 hover:bg-red-700 text-white"
+                            : "bg-emerald-600 hover:bg-emerald-700 text-white"
                             }`}
                     >
                         <Camera className="w-5 h-5 mr-2" />
@@ -128,15 +148,12 @@ export default function TestScannerPage() {
                     </button>
                 </div>
 
-                {/* Video Feed */}
+                {/* Scanner Container */}
                 <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 mb-6">
                     <h2 className="text-lg font-semibold text-white mb-4">Camera Feed</h2>
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full bg-black rounded-lg"
+                    <div
+                        id="reader"
+                        className="w-full bg-black rounded-lg overflow-hidden"
                         style={{ maxHeight: '500px' }}
                     />
                 </div>
@@ -154,8 +171,8 @@ export default function TestScannerPage() {
                                 <div className="flex items-center space-x-4 text-sm">
                                     <span
                                         className={`${validateISBN(result)
-                                                ? "text-emerald-400"
-                                                : "text-red-400"
+                                            ? "text-emerald-400"
+                                            : "text-red-400"
                                             }`}
                                     >
                                         {validateISBN(result) ? "✓ Valid ISBN" : "✗ Invalid ISBN"}
@@ -208,7 +225,7 @@ export default function TestScannerPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
                             <span className="text-gray-400">Library:</span>
-                            <p className="text-white">ZXing (@zxing/browser)</p>
+                            <p className="text-white">html5-qrcode v2.3.8 (ZXing-based)</p>
                         </div>
                         <div>
                             <span className="text-gray-400">HTTPS:</span>
@@ -229,6 +246,15 @@ export default function TestScannerPage() {
                             </p>
                         </div>
                         <div>
+                            <span className="text-gray-400">iOS Version:</span>
+                            <p className="text-white">
+                                {typeof navigator !== "undefined" &&
+                                    navigator.userAgent.includes("iPhone")
+                                    ? "iOS 15.1+ required ✓"
+                                    : "N/A (not iOS)"}
+                            </p>
+                        </div>
+                        <div className="md:col-span-2">
                             <span className="text-gray-400">User Agent:</span>
                             <p className="text-white text-xs break-all">
                                 {typeof navigator !== "undefined" ? navigator.userAgent : "N/A"}
@@ -243,15 +269,17 @@ export default function TestScannerPage() {
                         <AlertCircle className="w-6 h-6 text-blue-400 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
                             <h3 className="text-lg font-semibold text-blue-400 mb-2">
-                                Testing with ZXing
+                                Testing with html5-qrcode
                             </h3>
                             <ul className="text-blue-300 space-y-2 text-sm">
                                 <li>• Click &quot;Start Scanner&quot; to begin</li>
                                 <li>• Allow camera access when prompted</li>
                                 <li>• Point camera at ISBN barcode</li>
                                 <li>• Hold steady in center of frame</li>
-                                <li>• Detection is automatic</li>
-                                <li>• Works with EAN-13, EAN-8, Code 128, etc.</li>
+                                <li>• Detection is automatic with visual feedback</li>
+                                <li>• Optimized for EAN-13/ISBN-13 barcodes</li>
+                                <li>• Also supports EAN-8, UPC-A, UPC-E</li>
+                                <li>• <strong>iOS 15.1+ required</strong> for camera access</li>
                             </ul>
                         </div>
                     </div>

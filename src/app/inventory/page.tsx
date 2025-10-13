@@ -220,10 +220,12 @@ export default function InventoryPage() {
       authors?: string[]
       language?: string
       published_date?: string
+      publisher?: string
       isbn?: string
       condition?: string
       condition_notes?: string
       asking_price?: number
+      imageUrl?: string
     }
     if (ebayAuthStatus !== 'connected') {
       showToast('Please connect your eBay account first', 'error')
@@ -233,67 +235,155 @@ export default function InventoryPage() {
     try {
       setEbayListingLoading(book.id as string)
 
-      // Create inventory item via API
-      const inventoryRes = await fetch('/api/ebay/inventory', {
+      // Step 1: Create AI-powered listing preview using new Inventory Mapping API
+      showToast('Creating AI-powered listing preview...', 'success')
+
+      const previewRes = await fetch('/api/ebay/mapping/create-preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku: book.id, bookData: book })
-      })
-
-      if (!inventoryRes.ok) throw new Error('Failed to create inventory')
-
-      await inventoryRes.json()
-
-      // Create offer
-      const offerRes = await fetch('/api/ebay/offer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku: book.id, bookData: book })
-      })
-
-      if (!offerRes.ok) throw new Error('Failed to create offer')
-
-      const offer = await offerRes.json()
-
-      // Publish
-      const publishRes = await fetch('/api/ebay/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ offerId: offer.offerId })
-      })
-
-      if (!publishRes.ok) throw new Error('Failed to publish')
-
-      const publish = await publishRes.json()
-
-      // Then insert to listings table as before
-      await getSupabaseClient().from('listings').insert([{
-        book_id: bookData.id,
-        user_id: '358c3277-8f08-4ee1-a839-b660b9155ec2', // Demo user ID
-        ebay_item_id: publish.listingId,
-        title: generateEbayListingTitle(bookData),
-        description: bookData.description || `${bookData.title} by ${bookData.authors?.join(', ') || 'Unknown Author'}`,
-        start_price: bookData.asking_price,
-        status: 'listed',
-        ebay_response: publish
-      }])
-
-      // Update book status to listed
-      await getSupabaseClient()
-        .from('books')
-        .update({
-          status: 'listed',
-          listed_at: new Date().toISOString()
+        body: JSON.stringify({
+          bookId: bookData.id,
+          bookData: {
+            title: bookData.title,
+            isbn: bookData.isbn,
+            authors: bookData.authors,
+            publisher: bookData.publisher,
+            publishedDate: bookData.published_date,
+            description: bookData.description,
+            condition: bookData.condition,
+            imageUrl: bookData.imageUrl,
+            askingPrice: bookData.asking_price
+          }
         })
-        .eq('id', bookData.id)
+      })
 
-      // Refresh data
-      await fetchData()
+      if (!previewRes.ok) {
+        const error = await previewRes.json()
+        throw new Error(error.details || 'Failed to create listing preview')
+      }
 
-      showToast(`"${bookData.title}" has been listed on eBay!`, 'success')
+      const previewData = await previewRes.json()
+
+      // Step 2: Poll for preview completion (with timeout)
+      showToast('Generating AI recommendations...', 'success')
+
+      let attempts = 0
+      const maxAttempts = 30 // 30 seconds timeout
+      let previewCompleted = false
+
+      while (attempts < maxAttempts && !previewCompleted) {
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
+
+        const pollRes = await fetch('/api/ebay/mapping/poll-preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskId: previewData.taskId,
+            previewId: previewData.previewId
+          })
+        })
+
+        if (pollRes.ok) {
+          const pollData = await pollRes.json()
+
+          if (pollData.status === 'completed') {
+            previewCompleted = true
+            showToast(`AI preview ready! Suggested category: ${pollData.preview.suggestedCategory?.categoryName || 'Books'}`, 'success')
+
+            // TODO: Show modal with AI-generated preview for user approval
+            // For now, we'll auto-approve and continue with traditional flow
+
+            // Step 3: Create inventory item using AI suggestions
+            const inventoryRes = await fetch('/api/ebay/inventory', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sku: bookData.id,
+                bookData: {
+                  ...bookData,
+                  // Use AI-suggested improvements
+                  title: pollData.preview.suggestedTitle || bookData.title,
+                  description: pollData.preview.suggestedDescription || bookData.description
+                }
+              })
+            })
+
+            if (!inventoryRes.ok) throw new Error('Failed to create inventory')
+
+            // Step 4: Create offer
+            const offerRes = await fetch('/api/ebay/offer', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sku: bookData.id, bookData: bookData })
+            })
+
+            if (!offerRes.ok) throw new Error('Failed to create offer')
+
+            const offer = await offerRes.json()
+
+            // Step 5: Publish
+            const publishRes = await fetch('/api/ebay/publish', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ offerId: offer.offerId })
+            })
+
+            if (!publishRes.ok) throw new Error('Failed to publish')
+
+            const publish = await publishRes.json()
+
+            // Step 6: Update book record with eBay data
+            if (user) {
+              await getSupabaseClient()
+                .from('books')
+                .update({
+                  ebay_listing_id: publish.listingId,
+                  ebay_sku: bookData.id,
+                  ebay_status: 'active',
+                  ebay_listed_at: new Date().toISOString(),
+                  status: 'listed'
+                })
+                .eq('id', bookData.id)
+                .eq('user_id', user.id)
+            }
+
+            // Also insert to listings table for historical tracking
+            if (user) {
+              await getSupabaseClient().from('listings').insert([{
+                book_id: bookData.id,
+                user_id: user.id,
+                ebay_item_id: publish.listingId,
+                title: pollData.preview.suggestedTitle || generateEbayListingTitle(bookData),
+                description: pollData.preview.suggestedDescription || bookData.description || `${bookData.title} by ${bookData.authors?.join(', ') || 'Unknown Author'}`,
+                start_price: bookData.asking_price,
+                status: 'listed',
+                ebay_response: publish
+              }])
+            }
+
+            showToast(`"${bookData.title}" listed on eBay successfully!`, 'success')
+
+            // Refresh inventory
+            await fetchData()
+            break
+          } else if (pollData.status === 'failed') {
+            throw new Error('AI preview generation failed')
+          }
+        }
+
+        attempts++
+      }
+
+      if (!previewCompleted) {
+        throw new Error('Preview generation timed out. Please try again.')
+      }
+
     } catch (error) {
-      console.error('Error creating eBay listing:', error)
-      showToast('Failed to create eBay listing. Please try again.', 'error')
+      console.error('eBay listing error:', error)
+      showToast(
+        error instanceof Error ? error.message : 'Failed to list book on eBay. Please try again.',
+        'error'
+      )
     } finally {
       setEbayListingLoading(null)
     }

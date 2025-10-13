@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
+import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Camera, X, Loader2, AlertCircle } from "lucide-react";
 
 interface BarcodeScannerProps {
@@ -17,16 +17,16 @@ export default function BarcodeScanner({
 }: BarcodeScannerProps) {
     const [initializing, setInitializing] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
     useEffect(() => {
         startScanning();
 
         return () => {
             // Cleanup on unmount
-            if (readerRef.current) {
-                readerRef.current.reset();
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(() => { });
+                scannerRef.current = null;
             }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -34,7 +34,7 @@ export default function BarcodeScanner({
 
     const startScanning = async () => {
         try {
-            console.log('Initializing ZXing scanner...');
+            console.log('Initializing html5-qrcode scanner...');
             console.log('HTTPS:', window.location.protocol === 'https:');
 
             // Check for HTTPS
@@ -47,71 +47,96 @@ export default function BarcodeScanner({
                 throw new Error('Camera API not supported in this browser');
             }
 
-            const codeReader = new BrowserMultiFormatReader();
-            readerRef.current = codeReader;
-
             console.log('Requesting camera access...');
 
-            // Start continuous scanning
-            await codeReader.decodeFromVideoDevice(
-                null, // Use default camera (back camera on mobile)
-                videoRef.current!,
-                (result, error) => {
-                    if (result) {
-                        // Successfully decoded
-                        console.log('Barcode detected:', result.getText());
-                        const barcode = result.getText();
+            // Initialize html5-qrcode scanner
+            const scanner = new Html5QrcodeScanner("reader", {
+                fps: 10,
+                qrbox: { width: 250, height: 150 },
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E
+                ],
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true,
+                },
+            }, false);
 
-                        // Clean the barcode
-                        const cleaned = barcode.replace(/[-\s]/g, '');
+            scannerRef.current = scanner;
 
-                        // Stop scanning and return result
-                        codeReader.reset();
-                        onScan(cleaned);
+            // Add error handling for scanner initialization
+            try {
+                scanner.render(
+                    (decodedText) => {
+                        console.log('Barcode detected:', decodedText);
+
+                        // Clean the barcode (remove dashes and spaces)
+                        const cleaned = decodedText.replace(/[-\s]/g, '');
+
+                        // Validate ISBN length (10 or 13 digits)
+                        if (cleaned.length === 10 || cleaned.length === 13) {
+                            // Stop scanning and return result
+                            scanner.clear().catch(() => { });
+                            scannerRef.current = null;
+                            onScan(cleaned);
+                        } else {
+                            console.log('Invalid ISBN length:', cleaned.length);
+                        }
+                    },
+                    (error) => {
+                        // Only log errors that aren't just "no barcode detected"
+                        if (!error.includes("No MultiFormat Readers")) {
+                            console.warn('Scanner warning:', error);
+                        }
                     }
+                );
 
-                    if (error && !(error instanceof NotFoundException)) {
-                        // Log non-"not found" errors (NotFoundException is normal during scanning)
-                        console.error('Scan error:', error);
-                    }
-                }
-            );
+                console.log('Scanner started successfully');
+                setInitializing(false);
 
-            console.log('Scanner started successfully');
-            setInitializing(false);
+            } catch (renderError) {
+                console.error('Scanner render failed:', renderError);
+                handleError(renderError);
+            }
 
         } catch (err) {
             console.error('Scanner initialization error:', err);
-
-            let errorMsg = 'Failed to access camera. ';
-
-            if (err instanceof Error) {
-                const errLower = err.message.toLowerCase();
-
-                if (errLower.includes('permission') || errLower.includes('denied')) {
-                    errorMsg = 'Camera permission denied. Please allow camera access and refresh.';
-                } else if (errLower.includes('https') || errLower.includes('secure')) {
-                    errorMsg = 'Camera requires HTTPS. Please use the secure version of the site.';
-                } else if (errLower.includes('not found') || errLower.includes('no devices')) {
-                    errorMsg = 'No cameras found on this device.';
-                } else if (errLower.includes('in use')) {
-                    errorMsg = 'Camera is in use by another app. Please close other camera apps.';
-                } else {
-                    errorMsg += err.message;
-                }
-            } else {
-                errorMsg += String(err);
-            }
-
-            setErrorMessage(errorMsg);
-            onError(errorMsg);
-            setInitializing(false);
+            handleError(err);
         }
     };
 
+    const handleError = (err: unknown) => {
+        let errorMsg = 'Failed to access camera. ';
+
+        if (err instanceof Error) {
+            const errLower = err.message.toLowerCase();
+
+            if (errLower.includes('permission') || errLower.includes('denied')) {
+                errorMsg = 'Camera permission denied. Please allow camera access and refresh.';
+            } else if (errLower.includes('https') || errLower.includes('secure')) {
+                errorMsg = 'Camera requires HTTPS. Please use the secure version of the site.';
+            } else if (errLower.includes('not found') || errLower.includes('no devices')) {
+                errorMsg = 'No cameras found on this device.';
+            } else if (errLower.includes('in use')) {
+                errorMsg = 'Camera is in use by another app. Please close other camera apps.';
+            } else {
+                errorMsg += err.message;
+            }
+        } else {
+            errorMsg += String(err);
+        }
+
+        setErrorMessage(errorMsg);
+        onError(errorMsg);
+        setInitializing(false);
+    };
+
     const handleClose = () => {
-        if (readerRef.current) {
-            readerRef.current.reset();
+        if (scannerRef.current) {
+            scannerRef.current.clear().catch(() => { });
+            scannerRef.current = null;
         }
         onClose();
     };
@@ -182,13 +207,10 @@ export default function BarcodeScanner({
                             </div>
                         ) : null}
 
-                        {/* Video Element */}
-                        <video
-                            ref={videoRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            className="w-full rounded-xl"
+                        {/* Scanner Container */}
+                        <div
+                            id="reader"
+                            className="w-full rounded-xl overflow-hidden"
                             style={{
                                 maxHeight: '70vh',
                                 display: (initializing || errorMessage) ? 'none' : 'block'
