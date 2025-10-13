@@ -19,6 +19,51 @@
   }
 }
 
+/* html5-qrcode scanner styles - isolate from main app styles */
+.scanner-modal #reader * {
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+}
+
+.scanner-modal #reader button {
+  background: #374151 !important;
+  color: white !important;
+  border: 1px solid #4B5563 !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+  cursor: pointer !important;
+}
+
+.scanner-modal #reader button:hover {
+  background: #4B5563 !important;
+}
+
+.scanner-modal #reader select {
+  background: #374151 !important;
+  color: white !important;
+  border: 1px solid #4B5563 !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem !important;
+}
+
+.scanner-modal #reader input {
+  background: #374151 !important;
+  color: white !important;
+  border: 1px solid #4B5563 !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem !important;
+}
+
+.scanner-modal #reader .html5-qrcode-element {
+  border: none !important;
+}
+
+.scanner-modal #reader video {
+  border-radius: 0.75rem !important;
+  overflow: hidden !important;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

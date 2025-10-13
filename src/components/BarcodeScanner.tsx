@@ -22,11 +22,11 @@ export default function BarcodeScanner({
             try {
                 // First, explicitly request camera permission to trigger iOS permission dialog
                 console.log('Requesting camera permission...');
-                
+
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment' }
                 });
-                
+
                 // Permission granted, stop the stream and initialize scanner
                 stream.getTracks().forEach(track => track.stop());
                 console.log('Camera permission granted, initializing scanner...');
@@ -55,7 +55,7 @@ export default function BarcodeScanner({
 
                         // Validate ISBN length (10 or 13 digits)
                         if (cleaned.length === 10 || cleaned.length === 13) {
-                            scanner.clear().catch(() => {});
+                            scanner.clear().catch(() => { });
                             onScan(cleaned);
                         } else {
                             console.log('Invalid ISBN length:', cleaned.length);
@@ -63,7 +63,7 @@ export default function BarcodeScanner({
                     },
                     (error) => {
                         // Only log significant errors, not routine scanning messages
-                        if (!error.includes("No MultiFormat Readers") && 
+                        if (!error.includes("No MultiFormat Readers") &&
                             !error.includes("NotFoundException")) {
                             console.warn('Scanner error:', error);
                         }
@@ -83,14 +83,14 @@ export default function BarcodeScanner({
 
         return () => {
             if (scannerRef.current) {
-                scannerRef.current.clear().catch(() => {});
+                scannerRef.current.clear().catch(() => { });
                 scannerRef.current = null;
             }
         };
     }, [onScan, onError]);
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm scanner-modal">
             <div className="h-full flex flex-col">
                 {/* Header */}
                 <div className="bg-gray-900/90 border-b border-gray-700/50 p-4">
@@ -114,7 +114,14 @@ export default function BarcodeScanner({
 
                 {/* Scanner Container - html5-qrcode will render its UI here */}
                 <div className="flex-1 flex items-center justify-center p-4">
-                    <div id="reader" className="w-full max-w-2xl"></div>
+                    <div
+                        id="reader"
+                        className="w-full max-w-2xl"
+                        style={{
+                            isolation: 'isolate',
+                            contain: 'layout style paint'
+                        }}
+                    ></div>
                 </div>
             </div>
         </div>
