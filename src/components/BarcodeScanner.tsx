@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { X } from "lucide-react";
 
@@ -15,48 +15,77 @@ export default function BarcodeScanner({
     onError,
     onClose,
 }: BarcodeScannerProps) {
+    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+
     useEffect(() => {
-        // Initialize scanner - let the library handle all checks and permissions
-        const scanner = new Html5QrcodeScanner("reader", {
-            fps: 10,
-            qrbox: { width: 250, height: 150 },
-            formatsToSupport: [
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E
-            ],
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true,
-            },
-        }, false);
+        const initializeScanner = async () => {
+            try {
+                // First, explicitly request camera permission to trigger iOS permission dialog
+                console.log('Requesting camera permission...');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+                
+                // Permission granted, stop the stream and initialize scanner
+                stream.getTracks().forEach(track => track.stop());
+                console.log('Camera permission granted, initializing scanner...');
 
-        scanner.render(
-            (decodedText) => {
-                console.log('Barcode detected:', decodedText);
+                // Initialize scanner - library will handle the rest
+                const scanner = new Html5QrcodeScanner("reader", {
+                    fps: 10,
+                    qrbox: { width: 250, height: 150 },
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E
+                    ],
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true,
+                    },
+                }, false);
 
-                // Clean the barcode (remove dashes and spaces)
-                const cleaned = decodedText.replace(/[-\s]/g, '');
+                scanner.render(
+                    (decodedText) => {
+                        console.log('Barcode detected:', decodedText);
 
-                // Validate ISBN length (10 or 13 digits)
-                if (cleaned.length === 10 || cleaned.length === 13) {
-                    scanner.clear().catch(() => { });
-                    onScan(cleaned);
-                } else {
-                    console.log('Invalid ISBN length:', cleaned.length);
-                }
-            },
-            (error) => {
-                // Only log significant errors, not routine scanning messages
-                if (!error.includes("No MultiFormat Readers") &&
-                    !error.includes("NotFoundException")) {
-                    console.warn('Scanner error:', error);
-                }
+                        // Clean the barcode (remove dashes and spaces)
+                        const cleaned = decodedText.replace(/[-\s]/g, '');
+
+                        // Validate ISBN length (10 or 13 digits)
+                        if (cleaned.length === 10 || cleaned.length === 13) {
+                            scanner.clear().catch(() => {});
+                            onScan(cleaned);
+                        } else {
+                            console.log('Invalid ISBN length:', cleaned.length);
+                        }
+                    },
+                    (error) => {
+                        // Only log significant errors, not routine scanning messages
+                        if (!error.includes("No MultiFormat Readers") && 
+                            !error.includes("NotFoundException")) {
+                            console.warn('Scanner error:', error);
+                        }
+                    }
+                );
+
+                // Store scanner reference for cleanup
+                scannerRef.current = scanner;
+
+            } catch (error) {
+                console.error('Camera permission denied or error:', error);
+                onError('Camera permission denied. Please allow camera access in your browser settings.');
             }
-        );
+        };
+
+        initializeScanner();
 
         return () => {
-            scanner.clear().catch(() => { });
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(() => {});
+                scannerRef.current = null;
+            }
         };
     }, [onScan, onError]);
 
