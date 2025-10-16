@@ -123,17 +123,6 @@ export default function LoginPage() {
                 Sign up
               </Link>
             </p>
-            <p className="text-gray-400 text-sm">
-              <button
-                onClick={() => {
-                  localStorage.setItem('scryvault_demo_mode', 'true');
-                  window.location.href = '/scan';
-                }}
-                className="text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
-              >
-                Try Demo Mode
-              </button>
-            </p>
           </div>
         </div>
       </div>
