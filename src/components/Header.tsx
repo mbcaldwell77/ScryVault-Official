@@ -19,7 +19,7 @@ export default function Header() {
     <header className="bg-gray-800/50 border-b border-gray-700/50 px-4 lg:px-6 py-4 lg:ml-64">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2 lg:space-x-4">
-          <Link href="/" className="text-lg lg:text-xl font-bold text-white">
+          <Link href={user ? "/inventory" : "/"} className="text-lg lg:text-xl font-bold text-white">
             ScryVault
           </Link>
         </div>
