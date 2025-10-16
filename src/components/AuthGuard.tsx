@@ -15,9 +15,7 @@ export default function AuthGuard({ children, requireAuth = true }: AuthGuardPro
 
   useEffect(() => {
     if (!loading) {
-      const isDemoMode = localStorage.getItem('scryvault_demo_mode') === 'true'
-
-      if (requireAuth && !user && !isDemoMode) {
+      if (requireAuth && !user) {
         // Redirect to login if authentication is required and user is not logged in
         router.push('/login')
       }
@@ -36,9 +34,8 @@ export default function AuthGuard({ children, requireAuth = true }: AuthGuardPro
     )
   }
 
-  // If authentication is not required, or user is authenticated, or in demo mode
-  const isDemoMode = localStorage.getItem('scryvault_demo_mode') === 'true'
-  if (!requireAuth || user || isDemoMode) {
+  // If authentication is not required, or user is authenticated
+  if (!requireAuth || user) {
     return <>{children}</>
   }
 

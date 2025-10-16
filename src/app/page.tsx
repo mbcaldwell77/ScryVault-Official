@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Camera, TrendingUp } from "lucide-react";
+import { BookOpen, Search, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
@@ -28,16 +28,7 @@ export default function Home() {
               <a href="#features" className="text-gray-300 hover:text-emerald-400 transition-colors">Features</a>
             </nav>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => {
-                  localStorage.setItem('scryvault_demo_mode', 'true');
-                  window.location.href = '/scan';
-                }}
-                className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25"
-              >
-                Try Demo
-              </button>
-              <Link href="/login" className="text-gray-300 hover:text-emerald-400 transition-colors">
+              <Link href="/login" className="bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-lg shadow-emerald-500/25">
                 Sign In
               </Link>
             </div>
@@ -57,29 +48,23 @@ export default function Home() {
               <span className="text-white">Book Management</span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              Scan books, manage inventory, and list on eBay.
+              Track your book inventory with ISBN lookup and financial management.
               <br className="hidden md:block" />
-              Simple tools for book sellers.
+              Simple tools for book collectors and sellers.
             </p>
           </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <button
-              onClick={() => {
-                localStorage.setItem('scryvault_demo_mode', 'true');
-                window.location.href = '/scan';
-              }}
-              className="group relative bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-xl shadow-emerald-500/25 hover:shadow-2xl hover:shadow-emerald-500/40"
-            >
+            <Link href="/login" className="group relative bg-gradient-to-r from-emerald-500 to-cyan-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-emerald-600 hover:to-cyan-700 transition-all duration-200 shadow-xl shadow-emerald-500/25 hover:shadow-2xl hover:shadow-emerald-500/40">
               <span className="relative z-10 flex items-center justify-center space-x-2">
-                <Camera className="w-5 h-5" />
-                <span>Try Demo</span>
+                <BookOpen className="w-5 h-5" />
+                <span>Get Started</span>
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
-            </button>
-            <Link href="/login" className="bg-gray-800 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-700 transition-all duration-200 border border-gray-600">
-              Sign In
+            </Link>
+            <Link href="/signup" className="bg-gray-800 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-700 transition-all duration-200 border border-gray-600">
+              Sign Up
             </Link>
           </div>
 
@@ -87,10 +72,10 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 mb-16">
             <div className="group p-6 rounded-xl border border-gray-700/50 bg-gray-800/30 hover:border-emerald-500/50 hover:bg-gray-800/50 transition-all duration-300">
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
-                <Camera className="w-6 h-6 text-white" />
+                <Search className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Book Scanning</h3>
-              <p className="text-gray-400">Scan ISBN codes to automatically fetch book metadata and streamline your cataloging process.</p>
+              <h3 className="text-xl font-semibold text-white mb-2">ISBN Lookup</h3>
+              <p className="text-gray-400">Enter ISBN codes to automatically fetch book metadata and streamline your cataloging process.</p>
             </div>
 
             <div className="group p-6 rounded-xl border border-gray-700/50 bg-gray-800/30 hover:border-emerald-500/50 hover:bg-gray-800/50 transition-all duration-300">
@@ -105,8 +90,8 @@ export default function Home() {
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">eBay Integration</h3>
-              <p className="text-gray-400">List your books directly on eBay with automated pricing and inventory synchronization.</p>
+              <h3 className="text-xl font-semibold text-white mb-2">Financial Tracking</h3>
+              <p className="text-gray-400">Track purchase prices, asking prices, and profit margins for your book collection.</p>
             </div>
           </div>
 

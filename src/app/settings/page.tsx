@@ -1,19 +1,14 @@
 "use client"
 
-import { User, Bell, Shield, Palette, HelpCircle, ExternalLink, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { User, Bell, Shield, Palette, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
-import { ebayAPI } from "@/lib/ebay";
 import { useState, useEffect } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useAuth } from '@/lib/auth-context';
-import { isFeatureEnabled } from "@/lib/feature-flags";
 
 export default function SettingsPage() {
-  const [ebayAuthStatus, setEbayAuthStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking')
-  const [ebayAuthLoading, setEbayAuthLoading] = useState(false)
-
   // Add state for settings
   const [shippingCost, setShippingCost] = useState(0)
   const [returnPolicy, setReturnPolicy] = useState('30 days')
@@ -23,7 +18,6 @@ export default function SettingsPage() {
   const { user } = useAuth();
 
   useEffect(() => {
-    checkEbayAuthStatus()
     // Load from user_settings on mount
     const fetchSettings = async () => {
       if (user) {
@@ -39,39 +33,6 @@ export default function SettingsPage() {
     fetchSettings()
   }, [user])
 
-  const checkEbayAuthStatus = async () => {
-    try {
-      const isAuthenticated = await ebayAPI.isAuthenticated()
-      setEbayAuthStatus(isAuthenticated ? 'connected' : 'disconnected')
-    } catch (error) {
-      console.error('Error checking eBay auth status:', error)
-      setEbayAuthStatus('disconnected')
-    }
-  }
-
-  const handleEbayConnect = async () => {
-    try {
-      setEbayAuthLoading(true)
-      // Generate OAuth URL manually since we can't access the static method
-      const clientId = process.env.NEXT_PUBLIC_EBAY_APP_ID!
-      const ruName = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
-      const scope = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
-      const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scope)}&state=/settings`
-      window.location.href = authUrl
-    } catch (error) {
-      console.error('Error initiating eBay auth:', error)
-      setEbayAuthLoading(false)
-    }
-  }
-
-  const handleEbayDisconnect = async () => {
-    try {
-      await ebayAPI.logout()
-      setEbayAuthStatus('disconnected')
-    } catch (error) {
-      console.error('Error disconnecting from eBay:', error)
-    }
-  }
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gray-900">
@@ -109,7 +70,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
                   <div>
                     <p className="text-white font-medium">Email Address</p>
-                    <p className="text-gray-400 text-sm">john.doe@example.com</p>
+                    <p className="text-gray-400 text-sm">{user?.email || 'Not available'}</p>
                   </div>
                   <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
                     Change →
@@ -118,7 +79,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
                   <div>
                     <p className="text-white font-medium">Password</p>
-                    <p className="text-gray-400 text-sm">Last updated 30 days ago</p>
+                    <p className="text-gray-400 text-sm">Last updated recently</p>
                   </div>
                   <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
                     Change →
@@ -126,122 +87,6 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
-
-            {/* eBay Integration */}
-            {isFeatureEnabled('EBAY_INTEGRATION') && (
-              <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                  <ExternalLink className="w-5 h-5 mr-3 text-orange-400" />
-                  eBay Integration
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      {ebayAuthStatus === 'checking' && (
-                        <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-                      )}
-                      {ebayAuthStatus === 'connected' && (
-                        <CheckCircle className="w-5 h-5 text-emerald-400" />
-                      )}
-                      {ebayAuthStatus === 'disconnected' && (
-                        <XCircle className="w-5 h-5 text-red-400" />
-                      )}
-                      <div>
-                        <p className="text-white font-medium">
-                          {ebayAuthStatus === 'checking' && 'Checking connection...'}
-                          {ebayAuthStatus === 'connected' && 'Connected to eBay'}
-                          {ebayAuthStatus === 'disconnected' && 'Not connected to eBay'}
-                        </p>
-                        <p className="text-gray-400 text-sm">
-                          {ebayAuthStatus === 'connected'
-                            ? 'Ready to create and manage eBay listings'
-                            : 'Connect your eBay account to enable automated listings'
-                          }
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      {ebayAuthStatus === 'connected' ? (
-                        <button
-                          onClick={handleEbayDisconnect}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-                        >
-                          Disconnect
-                        </button>
-                      ) : (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={handleEbayConnect}
-                            disabled={ebayAuthLoading}
-                            className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center"
-                          >
-                            {ebayAuthLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            Connect eBay
-                          </button>
-                          <button
-                            onClick={async () => {
-                              const result = await ebayAPI.testConnection()
-                              alert(result.message)
-                            }}
-                            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-                          >
-                            Test API
-                          </button>
-                          <button
-                            onClick={() => {
-                              const clientId = process.env.NEXT_PUBLIC_EBAY_APP_ID!
-                              const ruName = 'ldernTom-ScryVaul-PRD-0f0240608-25d29f7a'
-                              const scope = 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account'
-                              const authUrl = `https://auth.ebay.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${ruName}&scope=${encodeURIComponent(scope)}&state=/settings`
-                              console.log('Auth URL:', authUrl)
-                              console.log('🌐 Opening eBay OAuth page...')
-                              window.open(authUrl, '_blank')
-                            }}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-                          >
-                            Test OAuth
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {ebayAuthStatus === 'connected' && (
-                    <>
-                      <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                        <div>
-                          <p className="text-white font-medium">Seller Policies</p>
-                          <p className="text-gray-400 text-sm">Configure your eBay seller policies</p>
-                        </div>
-                        <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
-                          Configure →
-                        </Link>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                        <div>
-                          <p className="text-white font-medium">Listing Templates</p>
-                          <p className="text-gray-400 text-sm">Set up automated listing templates</p>
-                        </div>
-                        <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
-                          Manage →
-                        </Link>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                        <div>
-                          <p className="text-white font-medium">Fee Calculator</p>
-                          <p className="text-gray-400 text-sm">Calculate eBay fees for your listings</p>
-                        </div>
-                        <Link href="#" className="text-emerald-400 hover:text-emerald-300 text-sm">
-                          Calculate →
-                        </Link>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Notification Settings */}
             <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
@@ -253,7 +98,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
                   <div>
                     <p className="text-white font-medium">Scan Notifications</p>
-                    <p className="text-gray-400 text-sm">Get notified when books are scanned</p>
+                    <p className="text-gray-400 text-sm">Get notified when books are added</p>
                   </div>
                   <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-emerald-500">
                     <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1" />
@@ -375,75 +220,6 @@ export default function SettingsPage() {
                   </Link>
                 </div>
               </div>
-            </div>
-
-            {/* Add form section */}
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6">
-              <h3 className="text-lg font-medium text-white">eBay Settings</h3>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Default Shipping Cost</label>
-                <input
-                  type="number"
-                  value={shippingCost}
-                  onChange={(e) => setShippingCost(parseFloat(e.target.value))}
-                  className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Return Policy</label>
-                <select
-                  value={returnPolicy}
-                  onChange={(e) => setReturnPolicy(e.target.value)}
-                  className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
-                >
-                  <option>30 days</option>
-                  <option>60 days</option>
-                  <option>No returns</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Marketplace</label>
-                <select
-                  value={marketplace}
-                  onChange={(e) => setMarketplace(e.target.value)}
-                  className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
-                >
-                  <option value="EBAY_US">US</option>
-                  <option value="EBAY_GB">UK</option>
-                  {/* Add more */}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Listing Type</label>
-                <select
-                  value={listingType}
-                  onChange={(e) => setListingType(e.target.value)}
-                  className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white"
-                >
-                  <option value="fixed">Fixed Price</option>
-                  <option value="auction">Auction</option>
-                </select>
-              </div>
-
-              <button onClick={async () => {
-                if (user) {
-                  await getSupabaseClient().from('user_settings').update({
-                    default_shipping_cost: shippingCost,
-                    ebay_return_policy: returnPolicy,
-                    ebay_marketplace: marketplace,
-                    ebay_listing_type: listingType
-                  }).eq('user_id', user.id)
-                  alert('Settings saved!')
-                } else {
-                  alert('User not logged in.')
-                }
-              }} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                Save Settings
-              </button>
             </div>
 
           </div>

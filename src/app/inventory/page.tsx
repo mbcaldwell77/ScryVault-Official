@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X, AlertCircle, AlertTriangle, ExternalLink } from "lucide-react";
+import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X, AlertCircle, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -8,10 +8,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { demoStorage } from "@/lib/demo-storage";
-import { ebayAPI, generateEbayListingTitle, calculateProfit, formatCurrency, getProfitColor } from "@/lib/ebay";
 import { isFeatureEnabled } from "@/lib/feature-flags";
-import { DemoCategory } from "@/lib/demo-storage";
 
 // Note: Sidebar component removed in favor of Header for authentication
 
@@ -38,11 +35,7 @@ export default function InventoryPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showToastState, setShowToastState] = useState(false);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
-  const [ebayAuthStatus, setEbayAuthStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking')
-  const [ebayListingLoading, setEbayListingLoading] = useState<string | null>(null)
-
   const { user } = useAuth()
-  const isDemoMode = !user && typeof window !== 'undefined' && localStorage.getItem('scryvault_demo_mode') === 'true'
 
   // Calculate real metrics from book data
   const calculateMetrics = (bookList: Record<string, unknown>[]) => {
@@ -195,199 +188,10 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchData();
-    checkEbayAuthStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Check eBay authentication status
-  const checkEbayAuthStatus = async () => {
-    try {
-      const isAuthenticated = await ebayAPI.isAuthenticated()
-      setEbayAuthStatus(isAuthenticated ? 'connected' : 'disconnected')
-    } catch (error) {
-      console.error('Error checking eBay auth status:', error)
-      setEbayAuthStatus('disconnected')
-    }
-  }
 
-  // Handle eBay listing creation
-  const handleEbayListing = async (book: Record<string, unknown>) => {
-    // Type assertion to ensure required properties exist
-    const bookData = book as {
-      id: string
-      title: string
-      description?: string
-      authors?: string[]
-      language?: string
-      published_date?: string
-      publisher?: string
-      isbn?: string
-      condition?: string
-      condition_notes?: string
-      asking_price?: number
-      imageUrl?: string
-    }
-    if (ebayAuthStatus !== 'connected') {
-      showToast('Please connect your eBay account first', 'error')
-      return
-    }
-
-    try {
-      setEbayListingLoading(book.id as string)
-
-      // Step 1: Create AI-powered listing preview using new Inventory Mapping API
-      showToast('Creating AI-powered listing preview...', 'success')
-
-      const previewRes = await fetch('/api/ebay/mapping/create-preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookId: bookData.id,
-          bookData: {
-            title: bookData.title,
-            isbn: bookData.isbn,
-            authors: bookData.authors,
-            publisher: bookData.publisher,
-            publishedDate: bookData.published_date,
-            description: bookData.description,
-            condition: bookData.condition,
-            imageUrl: bookData.imageUrl,
-            askingPrice: bookData.asking_price
-          }
-        })
-      })
-
-      if (!previewRes.ok) {
-        const error = await previewRes.json()
-        throw new Error(error.details || 'Failed to create listing preview')
-      }
-
-      const previewData = await previewRes.json()
-
-      // Step 2: Poll for preview completion (with timeout)
-      showToast('Generating AI recommendations...', 'success')
-
-      let attempts = 0
-      const maxAttempts = 30 // 30 seconds timeout
-      let previewCompleted = false
-
-      while (attempts < maxAttempts && !previewCompleted) {
-        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
-
-        const pollRes = await fetch('/api/ebay/mapping/poll-preview', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            taskId: previewData.taskId,
-            previewId: previewData.previewId
-          })
-        })
-
-        if (pollRes.ok) {
-          const pollData = await pollRes.json()
-
-          if (pollData.status === 'completed') {
-            previewCompleted = true
-            showToast(`AI preview ready! Suggested category: ${pollData.preview.suggestedCategory?.categoryName || 'Books'}`, 'success')
-
-            // TODO: Show modal with AI-generated preview for user approval
-            // For now, we'll auto-approve and continue with traditional flow
-
-            // Step 3: Create inventory item using AI suggestions
-            const inventoryRes = await fetch('/api/ebay/inventory', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                sku: bookData.id,
-                bookData: {
-                  ...bookData,
-                  // Use AI-suggested improvements
-                  title: pollData.preview.suggestedTitle || bookData.title,
-                  description: pollData.preview.suggestedDescription || bookData.description
-                }
-              })
-            })
-
-            if (!inventoryRes.ok) throw new Error('Failed to create inventory')
-
-            // Step 4: Create offer
-            const offerRes = await fetch('/api/ebay/offer', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ sku: bookData.id, bookData: bookData })
-            })
-
-            if (!offerRes.ok) throw new Error('Failed to create offer')
-
-            const offer = await offerRes.json()
-
-            // Step 5: Publish
-            const publishRes = await fetch('/api/ebay/publish', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ offerId: offer.offerId })
-            })
-
-            if (!publishRes.ok) throw new Error('Failed to publish')
-
-            const publish = await publishRes.json()
-
-            // Step 6: Update book record with eBay data
-            if (user) {
-              await getSupabaseClient()
-                .from('books')
-                .update({
-                  ebay_listing_id: publish.listingId,
-                  ebay_sku: bookData.id,
-                  ebay_status: 'active',
-                  ebay_listed_at: new Date().toISOString(),
-                  status: 'listed'
-                })
-                .eq('id', bookData.id)
-                .eq('user_id', user.id)
-            }
-
-            // Also insert to listings table for historical tracking
-            if (user) {
-              await getSupabaseClient().from('listings').insert([{
-                book_id: bookData.id,
-                user_id: user.id,
-                ebay_item_id: publish.listingId,
-                title: pollData.preview.suggestedTitle || generateEbayListingTitle(bookData),
-                description: pollData.preview.suggestedDescription || bookData.description || `${bookData.title} by ${bookData.authors?.join(', ') || 'Unknown Author'}`,
-                start_price: bookData.asking_price,
-                status: 'listed',
-                ebay_response: publish
-              }])
-            }
-
-            showToast(`"${bookData.title}" listed on eBay successfully!`, 'success')
-
-            // Refresh inventory
-            await fetchData()
-            break
-          } else if (pollData.status === 'failed') {
-            throw new Error('AI preview generation failed')
-          }
-        }
-
-        attempts++
-      }
-
-      if (!previewCompleted) {
-        throw new Error('Preview generation timed out. Please try again.')
-      }
-
-    } catch (error) {
-      console.error('eBay listing error:', error)
-      showToast(
-        error instanceof Error ? error.message : 'Failed to list book on eBay. Please try again.',
-        'error'
-      )
-    } finally {
-      setEbayListingLoading(null)
-    }
-  }
 
   // Filter books based on all filters
   useEffect(() => {
@@ -470,57 +274,46 @@ export default function InventoryPage() {
     try {
       setLoading(true);
 
-      if (isDemoMode) {
-        // In demo mode, load from demo storage
-        const demoData = await demoStorage.getData();
-        setCategories(demoData.categories as unknown as Record<string, unknown>[]);
-        setBooks(demoData.books as unknown as Record<string, unknown>[]);
-        setFilteredBooks(demoData.books as unknown as Record<string, unknown>[]);
-        setError(null);
-        console.log('Loaded demo data:', { categories: demoData.categories.length, books: demoData.books.length });
-      } else {
-        // For real users, load from database
-        if (!user?.id) {
-          setError('User not authenticated');
-          setCategories([]);
-          setBooks([]);
-          setFilteredBooks([]);
-          return;
-        }
-
-        // Test connection by fetching categories
-        const { data: categoriesData, error: categoriesError } = await getSupabaseClient()
-          .from('categories')
-          .select('*')
-          .order('name');
-
-        if (categoriesError) {
-          throw categoriesError;
-        }
-
-        // Test fetching books with category information for the authenticated user
-        const { data: booksData, error: booksError } = await getSupabaseClient()
-          .from('books')
-          .select(`
-            *,
-            categories (
-              name,
-              color
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (booksError) {
-          throw booksError;
-        }
-
-        setCategories(categoriesData || []);
-        setBooks(booksData || []);
-        setFilteredBooks(booksData || []);
-        setError(null);
-        console.log('Loaded user data:', { categories: categoriesData?.length || 0, books: booksData?.length || 0 });
+      if (!user?.id) {
+        setError('User not authenticated');
+        setCategories([]);
+        setBooks([]);
+        setFilteredBooks([]);
+        return;
       }
+
+      // Test connection by fetching categories
+      const { data: categoriesData, error: categoriesError } = await getSupabaseClient()
+        .from('categories')
+        .select('*')
+        .order('name');
+
+      if (categoriesError) {
+        throw categoriesError;
+      }
+
+      // Test fetching books with category information for the authenticated user
+      const { data: booksData, error: booksError } = await getSupabaseClient()
+        .from('books')
+        .select(`
+          *,
+          categories (
+            name,
+            color
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (booksError) {
+        throw booksError;
+      }
+
+      setCategories(categoriesData || []);
+      setBooks(booksData || []);
+      setFilteredBooks(booksData || []);
+      setError(null);
+      console.log('Loaded user data:', { categories: categoriesData?.length || 0, books: booksData?.length || 0 });
     } catch (err: unknown) {
       console.error('Error fetching data:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -529,247 +322,7 @@ export default function InventoryPage() {
     }
   };
 
-  const addMissingCategories = async () => {
-    try {
-      const missingCategories = [
-        { id: crypto.randomUUID(), name: 'Fantasy', description: 'Fantasy novels, magical worlds, and supernatural fiction', color: '#a855f7' },
-        { id: crypto.randomUUID(), name: 'Vintage', description: 'Classic and vintage books from previous decades', color: '#fbbf24' },
-        { id: crypto.randomUUID(), name: 'Antique', description: 'Rare and antique books with historical value', color: '#dc2626' },
-        { id: crypto.randomUUID(), name: 'Activity', description: 'Activity books, workbooks, and interactive materials', color: '#059669' }
-      ];
 
-      if (isDemoMode) {
-        // In demo mode, add categories to demo storage
-        const currentData = await demoStorage.getData();
-        const existingCategoryNames = currentData.categories.map((c: DemoCategory) => c.name);
-
-        for (const category of missingCategories) {
-          if (!existingCategoryNames.includes(category.name)) {
-            demoStorage.updateData({
-              categories: [...currentData.categories, category]
-            });
-          }
-        }
-
-        showToast('Missing categories added to demo storage!', 'success');
-      } else {
-        // For real users, add to database
-        for (const category of missingCategories) {
-          const { error } = await getSupabaseClient()
-            .from('categories')
-            .insert([category]);
-
-          if (error && !error.message.includes('duplicate key')) {
-            console.error('Error inserting category:', error);
-            throw error;
-          }
-        }
-
-        showToast('Missing categories added successfully!', 'success');
-      }
-
-      // Refresh categories after adding
-      await fetchData();
-    } catch (err) {
-      console.error('Error adding missing categories:', err);
-      showToast('Failed to add missing categories', 'error');
-    }
-  };
-
-  const addSampleBooks = async () => {
-    try {
-      setLoading(true);
-
-      const sampleBooks = [
-        {
-          title: "The Great Gatsby",
-          authors: ["F. Scott Fitzgerald"],
-          isbn: "978-0-7432-7356-5",
-          publisher: "Scribner",
-          published_date: "1925-04-10",
-          page_count: 180,
-          language: "English",
-          description: "A classic American novel set in the Jazz Age on Long Island.",
-          condition: "very_good",
-          purchase_price: 15.99,
-          asking_price: 25.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fiction')?.id as string,
-          tags: ["classic", "american literature", "jazz age"],
-          status: "draft"
-        },
-        {
-          title: "Sapiens: A Brief History of Humankind",
-          authors: ["Yuval Noah Harari"],
-          isbn: "978-0-06-231609-7",
-          publisher: "Harper",
-          published_date: "2014-01-01",
-          page_count: 443,
-          language: "English",
-          description: "A sweeping narrative of human history from the Stone Age to the modern age.",
-          condition: "like_new",
-          purchase_price: 18.99,
-          asking_price: 35.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Non-Fiction')?.id as string,
-          tags: ["history", "anthropology", "bestseller"],
-          status: "draft"
-        },
-        {
-          title: "Dune",
-          authors: ["Frank Herbert"],
-          isbn: "978-0-441-17271-9",
-          publisher: "Chilton Books",
-          published_date: "1965-01-01",
-          page_count: 688,
-          language: "English",
-          description: "Epic science fiction novel set on the desert planet Arrakis.",
-          condition: "good",
-          purchase_price: 12.99,
-          asking_price: 40.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Science Fiction')?.id as string,
-          tags: ["sci-fi", "space opera", "desert planet"],
-          status: "draft"
-        },
-        {
-          title: "The Silent Patient",
-          authors: ["Alex Michaelides"],
-          isbn: "978-1-250-30169-7",
-          publisher: "Celadon Books",
-          published_date: "2019-02-05",
-          page_count: 336,
-          language: "English",
-          description: "A psychological thriller about a woman who refuses to speak after allegedly murdering her husband.",
-          condition: "new",
-          purchase_price: 16.99,
-          asking_price: 22.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Mystery')?.id as string,
-          tags: ["thriller", "psychological", "mystery"],
-          status: "draft"
-        },
-        {
-          title: "Educated",
-          authors: ["Tara Westover"],
-          isbn: "978-0-399-59050-4",
-          publisher: "Random House",
-          published_date: "2018-02-20",
-          page_count: 334,
-          language: "English",
-          description: "A memoir about a woman who grows up in a survivalist Mormon family and eventually earns a PhD from Cambridge University.",
-          condition: "very_good",
-          purchase_price: 14.99,
-          asking_price: 28.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Biography')?.id as string,
-          tags: ["memoir", "education", "survival"],
-          status: "draft"
-        },
-        {
-          title: "The Catcher in the Rye",
-          authors: ["J.D. Salinger"],
-          isbn: "0316769487",
-          publisher: "Little, Brown and Company",
-          published_date: "1951-07-16",
-          page_count: 277,
-          language: "English",
-          description: "A classic coming-of-age novel about teenage alienation and loss of innocence.",
-          condition: "good",
-          purchase_price: 8.99,
-          asking_price: 18.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fiction')?.id as string,
-          tags: ["classic", "coming-of-age", "american literature"],
-          status: "draft"
-        },
-        {
-          title: "The Hobbit",
-          authors: ["J.R.R. Tolkien"],
-          isbn: "978-0-261-10221-4",
-          publisher: "George Allen & Unwin",
-          published_date: "1937-09-21",
-          page_count: 310,
-          language: "English",
-          description: "A fantasy novel about a hobbit's journey with dwarves to reclaim their homeland.",
-          condition: "very_good",
-          purchase_price: 12.99,
-          asking_price: 45.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Fantasy')?.id as string,
-          tags: ["fantasy", "adventure", "classic"],
-          status: "draft"
-        },
-        {
-          title: "Vintage Cookbook Collection",
-          authors: ["Various"],
-          isbn: "978-0-123456-78-9",
-          publisher: "Vintage Press",
-          published_date: "1965-01-01",
-          page_count: 250,
-          language: "English",
-          description: "A collection of vintage recipes from the 1960s.",
-          condition: "acceptable",
-          purchase_price: 5.99,
-          asking_price: 25.00,
-          category_id: categories.find((c: Record<string, unknown>) => c.name === 'Vintage')?.id as string,
-          tags: ["vintage", "cookbook", "recipes"],
-          status: "draft"
-        }
-      ];
-
-      if (isDemoMode) {
-        // Add each book to demo storage
-        for (const book of sampleBooks) {
-          const demoBook = {
-            title: book.title,
-            authors: book.authors,
-            isbn: book.isbn,
-            publisher: book.publisher,
-            published_date: book.published_date,
-            page_count: book.page_count,
-            language: book.language,
-            description: book.description,
-            condition: book.condition,
-            purchase_price: book.purchase_price,
-            asking_price: book.asking_price,
-            category: (categories.find((c: Record<string, unknown>) => c.id === book.category_id)?.name as string | undefined),
-            tags: book.tags,
-            status: book.status
-          };
-          demoStorage.addBook(demoBook);
-        }
-
-        showToast('Sample books added to demo storage! 🎉', 'success');
-      } else {
-        // For real users, add to database
-        if (!user?.id) {
-          setError('User not authenticated');
-          showToast('Please sign in to add sample books', 'error');
-          return;
-        }
-
-        for (const book of sampleBooks) {
-          const { error } = await getSupabaseClient()
-            .from('books')
-            .insert([{
-              ...book,
-              user_id: user.id
-            }]);
-
-          if (error) {
-            console.error('Error inserting book:', error);
-            throw error;
-          }
-        }
-
-        showToast('Sample books added successfully! 🎉', 'success');
-      }
-
-      // Refresh data after adding books
-      await fetchData();
-    } catch (err: unknown) {
-      console.error('Error adding sample books:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(`Failed to add sample books: ${errorMessage}`);
-      showToast(`Failed to add sample books: ${errorMessage}`, 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gray-900">
@@ -791,33 +344,18 @@ export default function InventoryPage() {
 
         {/* Database Connection Status */}
         <div className="p-6 border-b border-gray-700/50">
-          {isDemoMode && (
-            <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs">⚠️</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-amber-400 font-medium text-sm">Demo Mode - Data Persistence Fixed</p>
-                  <p className="text-amber-300 text-xs mt-1">
-                    RLS disabled for demo use. Your data will persist, but add authentication before production/multi-user use.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
           <div className="bg-gray-800/30 rounded-lg p-4">
             {loading ? (
               <div className="flex items-center space-x-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-500"></div>
-                <span className="text-gray-300">Connecting to Supabase...</span>
+                <span className="text-gray-300">Loading inventory...</span>
               </div>
             ) : error ? (
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">✕</span>
                 </div>
-                <span className="text-red-400">Connection Error: {error}</span>
+                <span className="text-red-400">Error: {error}</span>
               </div>
             ) : (
               <div className="flex items-center space-x-2">
@@ -825,7 +363,7 @@ export default function InventoryPage() {
                   <span className="text-white text-xs">✓</span>
                 </div>
                 <span className="text-emerald-400">
-                  Connected! Found {categories.length} categories and {books.length} books
+                  Found {categories.length} categories and {books.length} books
                 </span>
               </div>
             )}
@@ -835,28 +373,6 @@ export default function InventoryPage() {
         {/* Main Content */}
         <div className="p-4 lg:p-6">
 
-          {/* eBay Connection Notice */}
-          {isFeatureEnabled('EBAY_INTEGRATION') && ebayAuthStatus === 'disconnected' && books.length > 0 && (
-            <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-4 mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <ExternalLink className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-orange-400 font-medium">Connect eBay to Start Selling</p>
-                  <p className="text-orange-300 text-sm">
-                    Connect your eBay account to automatically create listings from your inventory.
-                  </p>
-                </div>
-                <Link
-                  href="/settings"
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-                >
-                  Connect Now
-                </Link>
-              </div>
-            </div>
-          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 mb-8 overflow-hidden">
@@ -946,31 +462,6 @@ export default function InventoryPage() {
             </div>
           )}
 
-          {/* Sample Data Section - Only show in demo mode */}
-          {!loading && books.length === 0 && isDemoMode && (
-            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6 mb-8">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-white mb-2">Add Sample Books</h3>
-                <p className="text-gray-300 mb-4">
-                  Your database is connected! Add some sample books to test the full functionality.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button
-                    onClick={addSampleBooks}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-blue-500/25"
-                  >
-                    Add 5 Sample Books 🎉
-                  </button>
-                  <button
-                    onClick={addMissingCategories}
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg shadow-green-500/25"
-                  >
-                    Add Missing Categories 📚
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Search and Filters - Moved above inventory */}
           <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 lg:p-6 mb-4 lg:mb-6">
@@ -1179,14 +670,6 @@ export default function InventoryPage() {
             <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl overflow-hidden mb-8">
               <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
                 <h3 className="text-lg font-semibold text-white">Your Books</h3>
-                {isDemoMode && (
-                  <button
-                    onClick={addSampleBooks}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-                  >
-                    Add More Samples
-                  </button>
-                )}
               </div>
               {/* Mobile/Tablet Card View - Hidden on desktop */}
               <div className="lg:hidden space-y-4 p-4 lg:p-6">
@@ -1216,20 +699,6 @@ export default function InventoryPage() {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
-                          {isFeatureEnabled('EBAY_INTEGRATION') && (book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
-                            <button
-                              onClick={() => handleEbayListing(book)}
-                              disabled={ebayListingLoading === book.id}
-                              className="p-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded transition-colors disabled:opacity-50"
-                              title="List on eBay"
-                            >
-                              {ebayListingLoading === book.id ? (
-                                <div className="w-4 h-4 border border-orange-400 border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                <ExternalLink className="w-4 h-4" />
-                              )}
-                            </button>
-                          )}
                           <button
                             onClick={() => handleDeleteBook(book)}
                             className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
@@ -1286,25 +755,6 @@ export default function InventoryPage() {
                           <span className="text-gray-400">Profit:</span>
                           <span className="text-emerald-400 font-semibold ml-1">${profit.toFixed(2)} ({profitPercentage.toFixed(1)}%)</span>
                         </div>
-                        {isFeatureEnabled('EBAY_INTEGRATION') && ebayAuthStatus === 'connected' && (book.status as string) === 'draft' && (
-                          <div className="col-span-2 mt-2 p-2 bg-gray-700/30 rounded-lg">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-400">eBay Profit:</span>
-                              {(() => {
-                                const ebayProfit = calculateProfit(
-                                  (book.asking_price as number) || 0,
-                                  (book.purchase_price as number) || 0,
-                                  3.99 // Standard shipping cost
-                                )
-                                return (
-                                  <span className={`font-semibold ${getProfitColor(ebayProfit.netProfit)}`}>
-                                    {formatCurrency(ebayProfit.netProfit)} ({ebayProfit.profitMargin.toFixed(1)}%)
-                                  </span>
-                                )
-                              })()}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
@@ -1374,9 +824,6 @@ export default function InventoryPage() {
                           )}
                         </div>
                       </th>
-                      {isFeatureEnabled('EBAY_INTEGRATION') && (
-                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">eBay Profit</th>
-                      )}
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-40">Actions</th>
                     </tr>
                   </thead>
@@ -1424,29 +871,6 @@ export default function InventoryPage() {
                             {Math.round((((book.asking_price as number) - (book.purchase_price as number)) / (book.asking_price as number)) * 100)}%
                           </div>
                         </td>
-                        {isFeatureEnabled('EBAY_INTEGRATION') && (
-                          <td className="px-6 py-4">
-                            {ebayAuthStatus === 'connected' && (book.status as string) === 'draft' ? (() => {
-                              const ebayProfit = calculateProfit(
-                                (book.asking_price as number) || 0,
-                                (book.purchase_price as number) || 0,
-                                3.99 // Standard shipping cost
-                              )
-                              return (
-                                <div className="text-sm">
-                                  <div className={`font-semibold ${getProfitColor(ebayProfit.netProfit)}`}>
-                                    {formatCurrency(ebayProfit.netProfit)}
-                                  </div>
-                                  <div className="text-gray-400 text-xs">
-                                    {ebayProfit.profitMargin.toFixed(1)}% margin
-                                  </div>
-                                </div>
-                              )
-                            })() : (
-                              <span className="text-gray-500 text-sm">-</span>
-                            )}
-                          </td>
-                        )}
                         <td className="px-6 py-4 w-40">
                           <div className="flex space-x-2">
                             <button
@@ -1463,20 +887,6 @@ export default function InventoryPage() {
                             >
                               <Edit className="w-4 h-4" />
                             </button>
-                            {isFeatureEnabled('EBAY_INTEGRATION') && (book.status as string) === 'draft' && ebayAuthStatus === 'connected' && (
-                              <button
-                                onClick={() => handleEbayListing(book)}
-                                disabled={ebayListingLoading === book.id}
-                                className="p-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded transition-colors disabled:opacity-50"
-                                title="List on eBay"
-                              >
-                                {ebayListingLoading === book.id ? (
-                                  <div className="w-4 h-4 border border-orange-400 border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                  <ExternalLink className="w-4 h-4" />
-                                )}
-                              </button>
-                            )}
                             <button
                               onClick={() => handleDeleteBook(book)}
                               className="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
