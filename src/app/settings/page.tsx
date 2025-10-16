@@ -4,34 +4,10 @@ import { User, Bell, Shield, Palette, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
-import { useState, useEffect } from "react";
-import { getSupabaseClient } from "@/lib/supabase";
 import { useAuth } from '@/lib/auth-context';
 
 export default function SettingsPage() {
-  // Add state for settings
-  const [shippingCost, setShippingCost] = useState(0)
-  const [returnPolicy, setReturnPolicy] = useState('30 days')
-  const [marketplace, setMarketplace] = useState('EBAY_US')
-  const [listingType, setListingType] = useState('fixed')
-
   const { user } = useAuth();
-
-  useEffect(() => {
-    // Load from user_settings on mount
-    const fetchSettings = async () => {
-      if (user) {
-        const { data } = await getSupabaseClient().from('user_settings').select('*').single()
-        if (data) {
-          setShippingCost(data.default_shipping_cost)
-          setReturnPolicy(data.ebay_return_policy || '30 days')
-          setMarketplace(data.ebay_marketplace || 'EBAY_US')
-          setListingType(data.ebay_listing_type || 'fixed')
-        }
-      }
-    }
-    fetchSettings()
-  }, [user])
 
   return (
     <AuthGuard>

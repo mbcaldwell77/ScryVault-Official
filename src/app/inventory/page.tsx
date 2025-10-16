@@ -1,14 +1,12 @@
 "use client";
 
 import { BookOpen, Package, TrendingUp, Search, Filter, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Check, X, AlertCircle, AlertTriangle } from "lucide-react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { getSupabaseClient } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import Header from "@/components/Header";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { isFeatureEnabled } from "@/lib/feature-flags";
 
 // Note: Sidebar component removed in favor of Header for authentication
 

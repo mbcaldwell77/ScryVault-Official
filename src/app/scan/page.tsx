@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Search, BookOpen, ArrowRight, X, Check, AlertCircle, Loader2, Plus } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Search, X, Check, AlertCircle, Loader2, Plus } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { lookupBookByISBN, validateISBN, BookData, getSupabaseClient } from "@/lib/supabase";
@@ -66,13 +66,7 @@ export default function AddBookPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Load recent books and categories on component mount
-  useEffect(() => {
-    loadRecentBooks();
-    loadCategories();
-  }, [user]);
-
-  const loadRecentBooks = async () => {
+  const loadRecentBooks = useCallback(async () => {
     try {
       if (!user?.id) {
         console.log('No user ID available for loading recent books');
@@ -97,7 +91,13 @@ export default function AddBookPage() {
     } catch (err) {
       console.error('Error loading recent books:', err);
     }
-  };
+  }, [user?.id]);
+
+  // Load recent books and categories on component mount
+  useEffect(() => {
+    loadRecentBooks();
+    loadCategories();
+  }, [user, loadRecentBooks]);
 
   const loadCategories = async () => {
     try {
@@ -333,7 +333,7 @@ export default function AddBookPage() {
               )}
 
               <div className="mt-4 pt-4 border-t border-gray-700/50">
-                <p className="text-gray-400 text-sm mb-3">Can't find the book? Add it manually:</p>
+                <p className="text-gray-400 text-sm mb-3">Can&apos;t find the book? Add it manually:</p>
                 <button
                   onClick={handleManualEntry}
                   className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center space-x-2"
@@ -393,10 +393,13 @@ export default function AddBookPage() {
                     <input
                       type="text"
                       value={showManualForm ? manualBookData.title : (bookData?.title || '')}
-                      onChange={(e) => showManualForm ?
-                        setManualBookData({ ...manualBookData, title: e.target.value }) :
-                        setBookData({ ...bookData!, title: e.target.value })
-                      }
+                      onChange={(e) => {
+                        if (showManualForm) {
+                          setManualBookData({ ...manualBookData, title: e.target.value });
+                        } else {
+                          setBookData({ ...bookData!, title: e.target.value });
+                        }
+                      }}
                       className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                       required
                     />
@@ -409,9 +412,11 @@ export default function AddBookPage() {
                       value={showManualForm ? manualBookData.authors.join(', ') : (bookData?.authors?.join(', ') || '')}
                       onChange={(e) => {
                         const authors = e.target.value.split(',').map(a => a.trim()).filter(a => a);
-                        showManualForm ?
-                          setManualBookData({ ...manualBookData, authors }) :
-                          setBookData({ ...bookData!, authors })
+                        if (showManualForm) {
+                          setManualBookData({ ...manualBookData, authors });
+                        } else {
+                          setBookData({ ...bookData!, authors });
+                        }
                       }}
                       className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                       placeholder="Author 1, Author 2"
@@ -424,10 +429,13 @@ export default function AddBookPage() {
                     <input
                       type="text"
                       value={showManualForm ? manualBookData.isbn : (bookData?.isbn || '')}
-                      onChange={(e) => showManualForm ?
-                        setManualBookData({ ...manualBookData, isbn: e.target.value }) :
-                        setBookData({ ...bookData!, isbn: e.target.value })
-                      }
+                      onChange={(e) => {
+                        if (showManualForm) {
+                          setManualBookData({ ...manualBookData, isbn: e.target.value });
+                        } else {
+                          setBookData({ ...bookData!, isbn: e.target.value });
+                        }
+                      }}
                       className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
@@ -437,10 +445,13 @@ export default function AddBookPage() {
                     <input
                       type="text"
                       value={showManualForm ? manualBookData.publisher || '' : (bookData?.publisher || '')}
-                      onChange={(e) => showManualForm ?
-                        setManualBookData({ ...manualBookData, publisher: e.target.value }) :
-                        setBookData({ ...bookData!, publisher: e.target.value })
-                      }
+                      onChange={(e) => {
+                        if (showManualForm) {
+                          setManualBookData({ ...manualBookData, publisher: e.target.value });
+                        } else {
+                          setBookData({ ...bookData!, publisher: e.target.value });
+                        }
+                      }}
                       className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
@@ -506,10 +517,13 @@ export default function AddBookPage() {
                     <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
                     <textarea
                       value={showManualForm ? manualBookData.description || '' : (bookData?.description || '')}
-                      onChange={(e) => showManualForm ?
-                        setManualBookData({ ...manualBookData, description: e.target.value }) :
-                        setBookData({ ...bookData!, description: e.target.value })
-                      }
+                      onChange={(e) => {
+                        if (showManualForm) {
+                          setManualBookData({ ...manualBookData, description: e.target.value });
+                        } else {
+                          setBookData({ ...bookData!, description: e.target.value });
+                        }
+                      }}
                       rows={3}
                       className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                       placeholder="Book description or notes"
