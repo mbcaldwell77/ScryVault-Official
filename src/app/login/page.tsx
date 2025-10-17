@@ -23,7 +23,7 @@ export default function LoginPage() {
     try {
       const result = await signIn(email, password)
       if (result?.data?.user) {
-        router.push('/scan')
+        router.push('/inventory')
       } else {
         setError('Sign in failed. Please try again.')
       }
